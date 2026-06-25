@@ -44,6 +44,13 @@
 - 当前 4 容器在线：backend(8000)/postgres(5432)/redis(6379)/worker。
 - ⚠️ 该机内存小：**重型池 Scrapy/Playwright/Chromium 别在此跑**；前端 dev 在本地跑；真实并发/压测等加大机器。
 
+### 本机开发（minner dev，2026-06-25 已重现 M0）
+
+- 环境：Docker 29 / Compose v5 / Node 24，daemon 正常。M0 主链路全绿（health / 7 表 / 建 Spider→run→Run 四层信号→Redis `spiderx:triage` 收到 `run_done` / 前端 5173 代理透传）。
+- **端口差异**：本机宿主已有一个 Postgres 占 `127.0.0.1:5432`。用 **`docker-compose.override.yml`（已 gitignore，本机专属不提交）** 以 `!override` 把容器 PG 宿主映射改到 **5433**；容器间仍走服务名 `postgres:5432` 不受影响。宿主侧调试连 `localhost:5433`。
+  - 注意 compose 对 `ports` 是**追加合并**，必须用 `!override` 才能替换掉基础文件的 5432，否则两个端口都绑、仍撞 5432。
+- **踩坑**：首次 `up --build` 镜像拉取进度流刷屏致命令 exit 1 中断，留下 postgres 容器未挂网络的半初始化态 → 容器内 DNS 解析 `postgres` 失败。`docker compose down` 干净重建网络即恢复（镜像/build 本身没问题）。
+
 ---
 
 ## 下一步：M1
