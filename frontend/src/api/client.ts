@@ -1,19 +1,89 @@
-// 极简 API 封装（M0），同源 /api 由 vite 代理到 backend
+// API 封装。同源 /api 由 vite 代理到 backend（见 vite.config）。
+// M1 假登录：本地 token 写在 localStorage，请求带 Authorization（后端暂不校验）。
+import type {
+  Project, Spider, SpiderVersion, Run, Paginated, Priority,
+} from '../types'
+
+const TOKEN_KEY = 'spiderx_token'
+export const getToken = () => localStorage.getItem(TOKEN_KEY)
+export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t)
+export const clearToken = () => localStorage.removeItem(TOKEN_KEY)
+
 async function http<T>(path: string, opts: RequestInit = {}): Promise<T> {
+  const token = getToken()
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(opts.headers || {}),
+    },
     ...opts,
   })
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`)
   return res.status === 204 ? (undefined as T) : res.json()
 }
 
+function qs(params: Record<string, unknown>): string {
+  const p = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') p.set(k, String(v))
+  }
+  const s = p.toString()
+  return s ? `?${s}` : ''
+}
+
+/** 列表接口兼容：后端可能返回数组（M0）或分页对象（M1）。 */
+export function asItems<T>(res: T[] | { items: T[] }): T[] {
+  return Array.isArray(res) ? res : res.items
+}
+
+export interface SpiderListQuery {
+  health?: string
+  status?: string
+  owner?: string
+  domain?: string
+  q?: string
+  page?: number
+  page_size?: number
+}
+
 export const api = {
   health: () => http<{ status: string; db: boolean; redis: boolean }>('/health'),
-  listProjects: () => http<any[]>('/api/projects'),
-  listSpiders: (pid: string) => http<any[]>(`/api/projects/${pid}/spiders`),
-  createSpider: (pid: string, name: string) =>
-    http<any>(`/api/projects/${pid}/spiders`, { method: 'POST', body: JSON.stringify({ name }) }),
-  runSpider: (sid: string) =>
-    http<any>(`/api/spiders/${sid}/run`, { method: 'POST' }),
+
+  listProjects: () => http<Project[]>('/api/projects'),
+
+  // 列表：后端补齐筛选/分页后返回 Paginated；当前后端若仍返回数组，listSpiders 做兼容。
+  listSpiders: (pid: string, query: SpiderListQuery = {}) =>
+    http<Paginated<Spider> | Spider[]>(`/api/projects/${pid}/spiders${qs({ ...query })}`),
+
+  createSpider: (pid: string, body: { name: string; priority?: Priority; tags?: string[] }) =>
+    http<Spider>(`/api/projects/${pid}/spiders`, { method: 'POST', body: JSON.stringify(body) }),
+
+  getSpider: (sid: string) => http<Spider>(`/api/spiders/${sid}`),
+
+  patchSpider: (sid: string, body: Partial<Pick<Spider, 'status' | 'priority'>>) =>
+    http<Spider>(`/api/spiders/${sid}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  runSpider: (sid: string) => http<{ queued: boolean }>(`/api/spiders/${sid}/run`, { method: 'POST' }),
+
+  listVersions: (sid: string) => http<SpiderVersion[]>(`/api/spiders/${sid}/versions`),
+
+  diffVersions: (sid: string, from: number, to: number) =>
+    http<{ from: number; to: number; lines: DiffLine[] }>(
+      `/api/spiders/${sid}/versions/diff${qs({ from, to })}`,
+    ),
+
+  rollback: (sid: string, version: number) =>
+    http<SpiderVersion>(`/api/spiders/${sid}/rollback`, {
+      method: 'POST',
+      body: JSON.stringify({ version }),
+    }),
+
+  listRuns: (sid: string, limit = 10) =>
+    http<Run[]>(`/api/spiders/${sid}/runs${qs({ limit })}`),
+}
+
+export interface DiffLine {
+  op: 'add' | 'del' | 'chg' | 'ctx'
+  text: string
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { api } from '../api/client'
+import { api, asItems } from '../api/client'
 
 const health = ref<{ status: string; db: boolean; redis: boolean } | null>(null)
 const projectId = ref<string>('')
@@ -14,7 +14,7 @@ async function refresh() {
   const projs = await api.listProjects()
   if (projs.length) {
     projectId.value = projs[0].id
-    spiders.value = await api.listSpiders(projectId.value)
+    spiders.value = asItems(await api.listSpiders(projectId.value))
   }
 }
 
@@ -22,9 +22,9 @@ async function refresh() {
 async function demoMainLink() {
   busy.value = true
   try {
-    const sp = await api.createSpider(projectId.value, `demo_${Date.now()}`)
+    const sp = await api.createSpider(projectId.value, { name: `demo_${Date.now()}` })
     await api.runSpider(sp.id)
-    spiders.value = await api.listSpiders(projectId.value)
+    spiders.value = asItems(await api.listSpiders(projectId.value))
   } finally {
     busy.value = false
   }
