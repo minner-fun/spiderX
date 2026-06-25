@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:#0a0d12;}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#222b39;border-radius:5px;border:2px solid #0a0d12;}
+::-webkit-scrollbar-thumb:hover{background:#2e3a4c;}
+@keyframes hfpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 currentColor;}50%{opacity:.55;box-shadow:0 0 0 4px transparent;}}
+@keyframes hfblink{0%,100%{opacity:1;}50%{opacity:.3;}}
+@keyframes hfscan{0%{transform:translateY(-100%);}100%{transform:translateY(2000%);}}
+@keyframes hfsweep{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;font-family:'Inter',sans-serif;color:#e8eef6;background:radial-gradient(1100px 560px at 82% -12%, #17222f 0%, rgba(23,34,47,0) 62%), radial-gradient(900px 500px at 0% 110%, #131a26 0%, rgba(19,26,38,0) 55%), #0a0d12;">
+  <div style="display:flex;height:100vh;overflow:hidden;background-image:linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px);background-size:46px 46px;">
+
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside style="width:218px;flex:none;border-right:1px solid #1c2431;background:linear-gradient(180deg,#0e131c 0%,#0b0f17 100%);display:flex;flex-direction:column;padding:16px 12px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:4px 8px 18px;">
+        <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#4cc9e0,#2a7d8c);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px #4cc9e055;position:relative;">
+          <div style="width:13px;height:13px;border:2px solid #06090d;border-radius:3px;transform:rotate(45deg);"></div>
+        </div>
+        <div style="line-height:1;"><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:.5px;">ARACHNE</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#5b6675;letter-spacing:2px;margin-top:2px;">CRAWL CONTROL</div></div>
+      </div>
+
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#46505f;letter-spacing:1.5px;padding:6px 10px 6px;">监控</div>
+      <sc-for list="{{ navTop }}" as="n" hint-placeholder-count="3">
+        <div onClick="{{ n.onClick }}" style="{{ n.style }}">
+          <span style="width:18px;text-align:center;font-size:14px;">{{ n.icon }}</span>
+          <span style="flex:1;">{{ n.label }}</span>
+          <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}"><span style="{{ n.badgeStyle }}">{{ n.badge }}</span></sc-if>
+        </div>
+      </sc-for>
+
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#46505f;letter-spacing:1.5px;padding:14px 10px 6px;">管理</div>
+      <sc-for list="{{ navBot }}" as="n" hint-placeholder-count="4">
+        <div onClick="{{ n.onClick }}" style="{{ n.style }}">
+          <span style="width:18px;text-align:center;font-size:14px;">{{ n.icon }}</span>
+          <span style="flex:1;">{{ n.label }}</span>
+          <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}"><span style="{{ n.badgeStyle }}">{{ n.badge }}</span></sc-if>
+        </div>
+      </sc-for>
+
+      <div style="margin-top:auto;border-top:1px solid #1c2431;padding-top:12px;display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#2a3140,#1a2029);border:1px solid #2c3645;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;color:#9aa7b8;">OP</div>
+        <div style="line-height:1.2;flex:1;min-width:0;"><div style="font-size:12.5px;font-weight:600;">ops@team</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">on-call · 值班</div></div>
+        <span style="width:7px;height:7px;border-radius:50%;background:#56d68a;color:#56d68a;box-shadow:0 0 8px #56d68a;"></span>
+      </div>
+    </aside>
+
+    <!-- ===================== MAIN ===================== -->
+    <section style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <!-- TOPBAR -->
+      <header style="height:54px;flex:none;border-bottom:1px solid #1c2431;background:#0c1118e6;backdrop-filter:blur(6px);display:flex;align-items:center;gap:12px;padding:0 18px;">
+        <div style="display:flex;align-items:center;gap:8px;border:1px solid #28323f;border-radius:8px;background:#10151e;padding:7px 12px;font-size:12.5px;cursor:pointer;">
+          <span style="width:7px;height:7px;border-radius:2px;background:#4cc9e0;box-shadow:0 0 7px #4cc9e0;"></span>招投标采集<span style="color:#5b6675;font-size:11px;">▾</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;border:1px solid #28323f;border-radius:8px;background:#10151e;padding:7px 11px;font-size:11.5px;color:#94a3b8;cursor:pointer;">env<span style="color:#f5b84d;"> prod</span> ▾</div>
+        <div style="flex:1;max-width:420px;display:flex;align-items:center;gap:9px;border:1px solid #28323f;border-radius:8px;background:#0d121a;padding:7px 12px;font-size:12.5px;color:#5b6675;">
+          <span style="color:#46505f;">⌕</span>搜索爬虫 / 站点 / 负责人<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;border:1px solid #28323f;border-radius:4px;padding:1px 6px;color:#5b6675;">⌘K</span>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5b6675;display:flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#56d68a;color:#56d68a;box-shadow:0 0 7px #56d68a;animation:hfpulse 2s infinite;"></span>巡检 12:00 · 每小时</div>
+          <div style="position:relative;font-size:16px;cursor:pointer;color:#94a3b8;">⌁<span style="position:absolute;top:-7px;right:-9px;background:#ff6f59;color:#0a0d12;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9px;border-radius:7px;padding:1px 4px;box-shadow:0 0 8px #ff6f5966;">23</span></div>
+        </div>
+      </header>
+
+      <!-- CONTENT ROUTER -->
+      <div style="flex:1;overflow:auto;padding:20px 22px 28px;">
+
+        <!-- ========================= TRIAGE (home) ========================= -->
+        <sc-if value="{{ isTriage }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:16px;max-width:1480px;">
+            <div style="display:flex;align-items:flex-end;gap:14px;">
+              <div><div style="font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:600;letter-spacing:.3px;">巡检分诊</div><div style="font-size:12.5px;color:#5b6675;margin-top:3px;">2,000 站 · 谁出问题了，是<span style="color:#ff8473;">改版挂了</span>还是<span style="color:#f5c266;">真没新数据</span></div></div>
+              <div style="margin-left:auto;display:flex;gap:8px;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;border:1px solid #28323f;border-radius:8px;background:#10151e;padding:7px 12px;color:#94a3b8;">⟳ 自动刷新 60s</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;border:1px solid #4cc9e033;border-radius:8px;background:#0f1c20;padding:7px 12px;color:#4cc9e0;">导出巡检报告</div>
+              </div>
+            </div>
+
+            <!-- CORE WATCH STRIP -->
+            <div style="border:1px solid #2a3340;border-radius:14px;background:linear-gradient(180deg,#141b26 0%,#0f141d 100%);padding:14px 16px 15px;position:relative;overflow:hidden;">
+              <div style="position:absolute;inset:0;background:linear-gradient(90deg,#4cc9e008,transparent 40%);pointer-events:none;"></div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;position:relative;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;letter-spacing:.3px;">★ 核心站盯梢区</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5b6675;">TOP&nbsp;20 · ≈80% 数据 · 干涸按<span style="color:#f5c266;">小时</span>判定 · 最高告警级</span>
+                <span style="margin-left:auto;font-size:11px;color:#7c8696;">一个核心站变🟡 ＞ 一个长尾站变🔴</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:9px;position:relative;">
+                <sc-for list="{{ coreSites }}" as="c" hint-placeholder-count="7">
+                  <div onClick="{{ c.onClick }}" style="{{ c.card }}">
+                    <div style="display:flex;align-items:center;gap:6px;"><span style="{{ c.dotStyle }}"></span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dbe4ee;">{{ c.name }}</span></div>
+                    <div style="display:flex;align-items:baseline;gap:5px;margin-top:7px;"><span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:{{ c.valColor }};">{{ c.today }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5b6675;">/ {{ c.base }}</span></div>
+                    <svg viewBox="0 0 100 24" preserveAspectRatio="none" style="width:100%;height:14px;margin-top:5px;display:block;"><polyline points="{{ c.spark }}" fill="none" stroke="{{ c.dot }}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/></svg>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <!-- THREE-STATE COUNTS -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:13px;">
+              <sc-for list="{{ triCards }}" as="c" hint-placeholder-count="4">
+                <div style="{{ c.card }}">
+                  <div style="position:absolute;top:0;left:0;right:0;height:2px;background:{{ c.bar }};"></div>
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="{{ c.dotStyle }}"></span><span style="font-size:12.5px;font-weight:600;color:{{ c.fg }};">{{ c.label }}</span><span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">{{ c.tag }}</span></div>
+                  <div style="font-family:'Space Grotesk',sans-serif;font-size:38px;font-weight:600;line-height:1.05;margin-top:6px;color:{{ c.fg }};letter-spacing:-.5px;">{{ c.value }}</div>
+                  <div style="font-size:11px;color:#6b7585;margin-top:2px;line-height:1.4;">{{ c.sub }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- HEATMAP + QUEUE -->
+            <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:13px;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:13px 16px;border-bottom:1px solid #1c2431;display:flex;align-items:center;justify-content:space-between;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;">全量站点健康热力图</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5b6675;">~1,980 长尾站 · 红灯排前 · 出问题才看</span></div>
+                <div style="padding:15px 16px;display:flex;flex-direction:column;gap:12px;">
+                  <div style="display:grid;grid-template-columns:repeat(33,1fr);gap:4px;">
+                    <sc-for list="{{ triCells }}" as="n" hint-placeholder-count="297"><div style="{{ n.style }}"></div></sc-for>
+                  </div>
+                  <div style="display:flex;gap:18px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#7c8696;align-items:center;padding-top:3px;border-top:1px solid #161d27;margin-top:2px;">
+                    <span style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:#ff6f59;box-shadow:0 0 6px #ff6f5977;"></span>结构故障 23</span>
+                    <span style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:#f5b84d;box-shadow:0 0 6px #f5b84d77;"></span>数据干涸 41</span>
+                    <span style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:#1f3a2a;"></span>健康 1,936</span>
+                    <span style="margin-left:auto;color:#46505f;">hover → 站点名 + 最近状态</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:13px 16px;border-bottom:1px solid #1c2431;display:flex;align-items:center;justify-content:space-between;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;">分诊队列</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5b6675;">价值 × 严重度</span></div>
+                <div style="display:flex;gap:7px;padding:10px 14px;border-bottom:1px solid #161d27;">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid #4cc9e055;background:#0f1c20;color:#4cc9e0;border-radius:20px;padding:3px 11px;font-weight:600;">待处理 64</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid #28323f;color:#7c8696;border-radius:20px;padding:3px 11px;">已压制 18</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;border:1px solid #28323f;color:#7c8696;border-radius:20px;padding:3px 11px;">已确认 7</span>
+                </div>
+                <div style="flex:1;overflow:auto;padding:9px 11px;display:flex;flex-direction:column;gap:8px;max-height:340px;">
+                  <sc-for list="{{ triRows }}" as="r" hint-placeholder-count="7">
+                    <div onClick="{{ r.onClick }}" style="border:1px solid #222b38;border-left:3px solid {{ r.color }};border-radius:9px;background:#121823;padding:9px 11px;cursor:pointer;">
+                      <div style="display:flex;align-items:center;gap:7px;"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:#dbe4ee;">{{ r.name }}</span><span style="font-size:9.5px;border:1px solid #2a3340;border-radius:6px;padding:0 6px;color:#7c8696;">{{ r.domain }}</span><span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:{{ r.valColor }};">{{ r.value }}</span></div>
+                      <div style="display:flex;align-items:center;gap:8px;margin-top:5px;"><span style="font-size:11px;color:{{ r.color }};flex:1;">{{ r.signal }}</span><svg viewBox="0 0 100 26" preserveAspectRatio="none" style="width:50px;height:15px;flex:none;"><polyline points="{{ r.spark }}" fill="none" stroke="{{ r.color }}" stroke-width="3" stroke-linejoin="round"/></svg></div>
+                      <div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;flex:1;">今日 {{ r.today }} · 平时 {{ r.base }}</span>
+                        <sc-if value="{{ r.isDry }}" hint-placeholder-val="{{ false }}">
+                          <span style="display:flex;gap:5px;"><span style="font-size:10px;border:1px solid #28323f;border-radius:6px;padding:2px 8px;color:#cdd6e2;background:#161d28;">✓ 确认真没数据</span><span style="font-size:10px;border:1px solid #4a241d;border-radius:6px;padding:2px 8px;color:#ff8473;background:#1a1110;">↑ 升级故障</span></span>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="padding:8px 14px;border-top:1px solid #161d27;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7c8696;line-height:1.5;">🟡 确认真没数据 = 按基线 snooze N 天，期间不进队列；出数据或到期自动解除。</div>
+              </div>
+            </div>
+
+            <!-- 4-LAYER MODEL -->
+            <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:14px 16px;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;margin-bottom:11px;">健康判定 = 四层信号 <span style="font-weight:400;font-size:11.5px;color:#5b6675;">— 逐层判定才能区分「改版挂了」与「真没新数据」</span></div>
+              <div style="display:flex;gap:9px;align-items:stretch;">
+                <sc-for list="{{ layerLegend }}" as="l" hint-placeholder-count="4">
+                  <div style="flex:1;border:1px solid #222b38;border-radius:10px;padding:10px 12px;background:#121823;">
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#4cc9e0;letter-spacing:.5px;">{{ l.layer }}</div>
+                    <div style="font-size:12px;font-weight:600;margin-top:3px;color:#dbe4ee;">{{ l.signal }}</div>
+                    <div style="font-size:10.5px;color:{{ l.color }};margin-top:4px;">0 / 异常 → {{ l.zero }}</div>
+                  </div>
+                  <span style="align-self:center;color:#2e3a4c;font-size:13px;">▸</span>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= SPIDERS LIST ========================= -->
+        <sc-if value="{{ isSpiders }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:1480px;">
+            <div style="display:flex;align-items:flex-end;gap:14px;">
+              <div><div style="font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:600;">爬虫</div><div style="font-size:12.5px;color:#5b6675;margin-top:3px;">2,000 站 · <span style="color:#94a3b8;">执行态(成功率) ≠ 健康态</span></div></div>
+              <div onClick="{{ goWizard }}" style="margin-left:auto;font-size:12.5px;font-weight:600;background:linear-gradient(135deg,#4cc9e0,#37a8bd);color:#06181c;border-radius:8px;padding:9px 16px;cursor:pointer;box-shadow:0 0 18px #4cc9e033;">+ 新建爬虫</div>
+            </div>
+            <div style="display:flex;gap:13px;align-items:flex-start;">
+              <div style="width:188px;flex:none;border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:14px;display:flex;flex-direction:column;gap:15px;">
+                <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+                  <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;letter-spacing:1px;margin-bottom:7px;">{{ f.title }}</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;"><sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="3"><div style="font-size:12px;color:#aeb9c7;display:flex;align-items:center;gap:8px;cursor:pointer;"><span style="width:14px;height:14px;border:1px solid #2c3645;border-radius:4px;background:#10151e;"></span>{{ o }}</div></sc-for></div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="flex:1;border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;min-width:0;">
+                <div style="padding:11px 14px;border-bottom:1px solid #1c2431;display:flex;gap:10px;align-items:center;">
+                  <div style="flex:1;max-width:280px;display:flex;align-items:center;gap:8px;border:1px solid #28323f;border-radius:8px;background:#0d121a;padding:7px 11px;font-size:12px;color:#5b6675;"><span style="color:#46505f;">⌕</span>按名称 / 站点搜索</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;border:1px solid #28323f;border-radius:8px;padding:7px 11px;color:#94a3b8;">排序：健康×价值 ▾</div>
+                  <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5b6675;">批量 ▾</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1.9fr 0.8fr 0.8fr 0.9fr 0.85fr 1fr 0.95fr 0.8fr;padding:9px 14px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;letter-spacing:.5px;border-bottom:1px solid #161d27;">名称<span>域</span><span>负责人</span><span>执行态</span><span>健康</span><span>调度</span><span>上次</span><span>成功率</span></div>
+                <div style="max-height:560px;overflow:auto;">
+                  <sc-for list="{{ spiderRows }}" as="r" hint-placeholder-count="12">
+                    <div onClick="{{ r.onClick }}" style="display:grid;grid-template-columns:1.9fr 0.8fr 0.8fr 0.9fr 0.85fr 1fr 0.95fr 0.8fr;padding:11px 14px;font-size:12px;border-bottom:1px solid #141a23;align-items:center;cursor:pointer;" style-hover="background:#131925">
+                      <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:#dbe4ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }}</span>
+                      <span style="font-size:11px;color:#7c8696;">{{ r.domain }}</span>
+                      <span style="font-size:11px;color:#7c8696;">{{ r.owner }}</span>
+                      <span style="{{ r.statusStyle }}">{{ r.status }}</span>
+                      <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:{{ r.healthColor }};"><span style="width:8px;height:8px;border-radius:50%;background:{{ r.healthColor }};box-shadow:0 0 7px {{ r.healthColor }};"></span>{{ r.health }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6b7585;">{{ r.sched }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6b7585;">{{ r.last }}</span>
+                      <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:600;color:{{ r.rateColor }};">{{ r.rate }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="padding:9px 14px;border-top:1px solid #1c2431;font-size:11px;color:#f5c266;background:#161204;">⚠ 第 1 行成功率 99.1% 但健康 <span style="color:#ff8473;">🔴 结构故障</span> — 跑成功率 ≠ 出数据。</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= DETAIL ========================= -->
+        <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:1480px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5b6675;"><span onClick="{{ goSpiders }}" style="cursor:pointer;color:#4cc9e0;">爬虫</span> / ccgp_中央政府采购</div>
+            <div style="border:1px solid #2a3340;border-radius:14px;background:linear-gradient(180deg,#141b26,#0f141d);padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+              <div><div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">ccgp_中央政府采购</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5b6675;margin-top:3px;">招投标 · 负责人 李雷 · 调度 */30 · 线上 v7</div></div>
+              <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:#ff8473;border:1px solid #4a241d;background:#1a1110;border-radius:20px;padding:5px 12px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff6f59;box-shadow:0 0 8px #ff6f59;"></span>结构性故障</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6fdf9c;border:1px solid #1d3326;background:#0f1a14;border-radius:20px;padding:5px 12px;">执行 运行中 · 99.1%</span>
+              <div style="margin-left:auto;display:flex;gap:8px;font-size:12.5px;">
+                <span style="background:linear-gradient(135deg,#4cc9e0,#37a8bd);color:#06181c;font-weight:600;border-radius:8px;padding:8px 14px;cursor:pointer;box-shadow:0 0 16px #4cc9e033;">✓ 验证修复</span>
+                <span onClick="{{ goRules }}" style="border:1px solid #28323f;border-radius:8px;padding:8px 14px;color:#cdd6e2;cursor:pointer;">编辑规则</span>
+                <span onClick="{{ goRun }}" style="border:1px solid #28323f;border-radius:8px;padding:8px 14px;color:#cdd6e2;cursor:pointer;">↻ 运行一次</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.45fr 1fr;gap:13px;">
+              <div style="display:flex;flex-direction:column;gap:13px;">
+                <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                  <div style="padding:12px 15px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;">分层健康信号 <span style="font-weight:400;font-size:11px;color:#5b6675;">— 区分「挂了 vs 没数据」</span></div>
+                  <div style="display:grid;grid-template-columns:1fr 1.6fr 1fr 1.1fr;padding:8px 15px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;border-bottom:1px solid #161d27;">层<span>信号</span><span>当前值</span><span>判定</span></div>
+                  <sc-for list="{{ layers }}" as="l" hint-placeholder-count="4">
+                    <div style="display:grid;grid-template-columns:1fr 1.6fr 1fr 1.1fr;padding:11px 15px;font-size:12px;border-bottom:1px solid #141a23;align-items:center;">
+                      <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:#aeb9c7;">{{ l.layer }}</span><span style="color:#7c8696;font-size:11.5px;">{{ l.signal }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#cdd6e2;">{{ l.value }}</span><span style="{{ l.style }}">{{ l.verdict }}</span>
+                    </div>
+                  </sc-for>
+                  <div style="padding:11px 15px;background:#1a1110;border-top:1px solid #2a1a16;font-size:12px;color:#ff8473;line-height:1.5;"><b>结论：</b>HTTP 正常但列表 selector 命中 0 行 → <b>改版导致结构故障</b>，需更新列表页规则（非「没数据」）。</div>
+                  <div style="padding:9px 15px;border-top:1px solid #161d27;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7c8696;display:flex;flex-wrap:wrap;gap:14px;align-items:center;">判定态：<span style="color:#6fdf9c;">● 正常</span><span style="color:#ff8473;">● 异常</span><span style="color:#5b6675;">● 未上报(unknown)</span><span style="color:#9aa7b8;">◌ 整体未知</span><span style="margin-left:auto;font-style:italic;color:#5b6675;">代码驱动未按契约回报 → 该层未上报</span></div>
+                </div>
+                <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                  <div style="padding:12px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;">数据量基线趋势</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5b6675;">日均 ~1,240 · 今日 <span style="color:#ff8473;">0</span></span></div>
+                  <div style="padding:16px;display:flex;align-items:flex-end;gap:4px;height:140px;"><sc-for list="{{ baseBars }}" as="b" hint-placeholder-count="14"><div style="flex:1;border-radius:3px 3px 0 0;background:{{ b.color }};height:{{ b.h }};box-shadow:{{ b.glow }};"></div></sc-for></div>
+                  <div style="padding:0 16px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;display:flex;justify-content:space-between;">14 天前<span style="color:#ff8473;">今日 = 0（断崖）</span></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:13px;">
+                <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:14px 16px;display:flex;flex-direction:column;gap:9px;font-size:12px;">
+                  <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;margin-bottom:2px;">元信息</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:#5b6675;">业务价值</span><span style="display:flex;gap:6px;align-items:center;"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;background:#16222a;border:1px solid #4cc9e033;color:#4cc9e0;border-radius:5px;padding:1px 7px;">P0 手填</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#f5c266;">贡献 6%</span></span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:#5b6675;">负责人</span><span style="color:#cdd6e2;">李雷</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:#5b6675;">标签</span><span style="color:#cdd6e2;">招投标 · 高频 · JS渲染</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:#5b6675;">线上版本</span><span onClick="{{ goVersions }}" style="color:#4cc9e0;cursor:pointer;">v7（共 7 版）→</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:#5b6675;">数据源</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#cdd6e2;">PG · bid_notices</span></div>
+                </div>
+                <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                  <div style="padding:12px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">最近运行</span><span onClick="{{ goRun }}" style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#4cc9e0;cursor:pointer;">查看全部 →</span></div>
+                  <sc-for list="{{ recentRuns }}" as="r" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 15px;font-family:'JetBrains Mono',monospace;font-size:11px;border-bottom:1px solid #141a23;"><span style="color:#aeb9c7;">{{ r.id }}</span><span style="color:#5b6675;">{{ r.time }}</span><span style="color:#6fdf9c;">{{ r.exec }}</span><span style="color:{{ r.dataColor }};font-weight:600;">{{ r.data }}</span></div></sc-for>
+                  <div style="padding:9px 15px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#f5c266;">↑「跑成功」但「新增 0」— 分层信号识破的陷阱</div>
+                </div>
+                <div style="border:1px solid #2a1a16;border-radius:14px;background:linear-gradient(180deg,#1a1110,#120c0b);padding:14px 16px;flex:1;display:flex;flex-direction:column;">
+                  <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;margin-bottom:7px;color:#ff8473;">验证修复</div>
+                  <div style="font-size:11.5px;color:#c9a99f;line-height:1.6;">上次验证 02-25 14:02：结构探针 <b style="color:#ff8473;">✗ list 仍命中 0</b> · 抽到 0 条 · <b>待修复</b>。</div>
+                  <div style="margin-top:auto;display:flex;gap:8px;padding-top:12px;"><span style="background:linear-gradient(135deg,#4cc9e0,#37a8bd);color:#06181c;font-weight:600;font-size:12px;border-radius:8px;padding:8px 13px;cursor:pointer;">运行验证修复</span><span style="border:1px solid #3a2723;color:#c9a99f;font-size:12px;border-radius:8px;padding:8px 13px;cursor:pointer;">探针详情</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= RUN / LOG ========================= -->
+        <sc-if value="{{ isRun }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;max-width:1480px;height:100%;">
+            <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:13px 16px;display:flex;align-items:center;gap:14px;">
+              <div><div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;">ccgp_中央政府采购</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5b6675;margin-top:2px;">run #5822 · node-07 · 已运行 02:18</div></div>
+              <span style="display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#6fdf9c;border:1px solid #1d3326;background:#0f1a14;border-radius:20px;padding:4px 11px;"><span style="width:7px;height:7px;border-radius:50%;background:#56d68a;box-shadow:0 0 7px #56d68a;animation:hfpulse 1.5s infinite;"></span>RUNNING</span>
+              <div style="margin-left:auto;display:flex;gap:8px;font-size:12px;"><span style="border:1px solid #28323f;border-radius:8px;padding:7px 13px;color:#cdd6e2;cursor:pointer;">⏸ 暂停</span><span style="border:1px solid #4a241d;color:#ff8473;border-radius:8px;padding:7px 13px;cursor:pointer;">⏹ 停止</span><span style="border:1px solid #28323f;border-radius:8px;padding:7px 13px;color:#cdd6e2;cursor:pointer;">↻ 重跑</span></div>
+            </div>
+            <div style="display:flex;gap:20px;border-bottom:1px solid #1c2431;font-size:13px;padding:0 2px;">
+              <span style="padding:7px 2px 11px;border-bottom:2px solid #4cc9e0;font-weight:600;color:#e8eef6;">实时日志</span><span style="padding:7px 2px 11px;color:#5b6675;">概览</span><span style="padding:7px 2px 11px;color:#5b6675;">抓取数据 286</span><span style="padding:7px 2px 11px;color:#5b6675;">请求记录</span><span style="padding:7px 2px 11px;color:#5b6675;">配置快照</span>
+            </div>
+            <div style="flex:1;display:flex;gap:13px;min-height:0;">
+              <div style="flex:1.6;border:1px solid #1f2734;border-radius:14px;background:#080b10;overflow:hidden;display:flex;flex-direction:column;position:relative;">
+                <div style="position:absolute;top:0;left:0;right:0;height:60px;background:linear-gradient(180deg,#4cc9e00a,transparent);pointer-events:none;"></div>
+                <div style="padding:9px 14px;border-bottom:1px solid #1c2431;display:flex;gap:10px;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5b6675;">级别<span style="border:1px solid #28323f;border-radius:5px;padding:2px 8px;color:#94a3b8;">全部 ▾</span><span style="border:1px solid #28323f;border-radius:5px;padding:2px 8px;">⌕ 过滤</span><span style="margin-left:auto;color:#6fdf9c;">● 自动滚动</span></div>
+                <div style="flex:1;overflow:auto;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:2;">
+                  <sc-for list="{{ runLog }}" as="l" hint-placeholder-count="13"><div style="{{ l.style }}"><span style="color:#3a4452;">{{ l.t }}</span> {{ l.txt }}</div></sc-for>
+                </div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:12px;min-width:0;">
+                <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                  <div style="padding:11px 14px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;">健康指标</span><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#6fdf9c;border:1px solid #1d3326;background:#0f1a14;border-radius:6px;padding:1px 7px;">信号上报 配置驱动·全量✓</span></div>
+                  <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <sc-for list="{{ runStats }}" as="s" hint-placeholder-count="8"><div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">{{ s.label }}</div><div style="font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:600;color:{{ s.color }};margin-top:2px;">{{ s.value }}</div></div></sc-for>
+                  </div>
+                </div>
+                <div style="flex:1;border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:14px;display:flex;flex-direction:column;">
+                  <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;margin-bottom:11px;">抓取阶段</div>
+                  <sc-for list="{{ stages }}" as="s" hint-placeholder-count="4"><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:5px;"><span style="color:#aeb9c7;">{{ s.name }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6fdf9c;">{{ s.note }}</span></div><div style="height:7px;background:#10151e;border-radius:4px;overflow:hidden;"><span style="display:block;height:100%;width:{{ s.pct }};background:linear-gradient(90deg,#37a8bd,#56d68a);box-shadow:0 0 8px #56d68a55;"></span></div></div></sc-for>
+                  <div style="margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6fdf9c;border-top:1px solid #161d27;padding-top:9px;">✓ 命中水位正常停止 → 本次「新增少」属真实，非故障</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= VERSIONS ========================= -->
+        <sc-if value="{{ isVersions }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;max-width:1480px;">
+            <div style="display:flex;align-items:center;gap:12px;"><div style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;">ccgp_中央政府采购 · 版本管理</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;border:1px solid #28323f;border-radius:8px;padding:6px 11px;background:#10151e;">对比 v6 ↔ v7 ▾</div></div>
+            <div style="border:1px solid #2a2614;border-radius:12px;background:#151204;padding:10px 14px;font-size:11.5px;color:#f5c266;line-height:1.6;">每次「保存并试运行」生成新版本、<b>配置入库</b> — 根除旧项目「复制文件当版本」（同一爬虫曾出现 <span style="font-family:'JetBrains Mono',monospace;">_备份 / _拆分 / _细化0225</span> 等 11 个副本，没人知道线上跑哪个）。</div>
+            <div style="display:grid;grid-template-columns:1fr 1.25fr;gap:13px;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                <div style="padding:12px 15px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">版本历史</div>
+                <sc-for list="{{ versions }}" as="v" hint-placeholder-count="7"><div style="{{ v.row }}"><div style="display:flex;align-items:center;gap:9px;"><span style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12.5px;color:#dbe4ee;">{{ v.ver }}</span><sc-if value="{{ v.live }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;background:#0f1a14;border:1px solid #1d3326;color:#6fdf9c;border-radius:6px;padding:1px 7px;box-shadow:0 0 8px #56d68a22;">● 线上</span></sc-if><span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">{{ v.author }} · {{ v.time }}</span></div><div style="font-size:11.5px;color:#7c8696;margin-top:5px;">{{ v.msg }}</div></div></sc-for>
+              </div>
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:12px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">规则配置 diff · v6 → v7</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:linear-gradient(135deg,#4cc9e0,#37a8bd);color:#06181c;font-weight:600;border-radius:8px;padding:6px 13px;cursor:pointer;">↶ 回滚到此版本</span></div>
+                <div style="flex:1;padding:14px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.95;background:#080b10;overflow:auto;">
+                  <sc-for list="{{ diffLines }}" as="d" hint-placeholder-count="10"><div style="{{ d.style }}">{{ d.txt }}</div></sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= WIZARD (dedup) ========================= -->
+        <sc-if value="{{ isWizard }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:16px;max-width:1480px;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">新建爬虫向导</div>
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;"><sc-for list="{{ wizSteps }}" as="s" hint-placeholder-count="7"><span style="{{ s.style }}">{{ s.label }}</span><span style="color:#2e3a4c;font-size:11px;">›</span></sc-for></div>
+            <div style="display:grid;grid-template-columns:1fr 1.1fr;gap:13px;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
+                <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;">步骤 3 · 查重 <span style="font-weight:400;font-size:11.5px;color:#5b6675;">防重复 / 防冒充</span></div>
+                <div style="font-size:12px;color:#7c8696;line-height:1.6;">按 <b style="color:#cdd6e2;">目标域名 / URL 模式 / 字段配置</b> 三维自动查重，撞库当场拦下。</div>
+                <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;margin-bottom:5px;">目标域名</div><div style="border:1px solid #28323f;border-radius:8px;padding:9px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;background:#0d121a;color:#cdd6e2;">www.ccgp.gov.cn</div></div>
+                <div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;margin-bottom:5px;">列表 URL 模式</div><div style="border:1px solid #28323f;border-radius:8px;padding:9px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;background:#0d121a;color:#cdd6e2;">/cggg/zygg/?page={n}</div></div>
+                <div style="margin-top:auto;display:flex;gap:8px;font-size:12.5px;"><span style="border:1px solid #28323f;border-radius:8px;padding:9px 15px;color:#cdd6e2;cursor:pointer;">上一步</span><span style="border:1px solid #2c3645;border-radius:8px;padding:9px 15px;color:#5b6675;background:#10151e;cursor:not-allowed;">下一步（需先处理查重）</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:13px;">
+                <div style="border:1px solid #4a241d;border-radius:14px;background:linear-gradient(180deg,#1c1210,#140c0b);padding:16px 18px;">
+                  <div style="display:flex;align-items:center;gap:9px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:#ff8473;">⚠ 发现重复 — 撞库拦截</div>
+                  <div style="font-size:12px;color:#c9a99f;margin-top:10px;line-height:1.7;">该域名已存在爬虫 <b style="color:#ffd9d0;">「ccgp_中央政府采购」</b>（作者 李雷 · v7 · 健康），字段配置重合 <b style="color:#ff8473;">92%</b>。不能以「新站」冒充重复提交。</div>
+                  <div style="display:flex;gap:8px;margin-top:14px;font-size:12px;flex-wrap:wrap;"><span style="border:1px solid #2c3645;border-radius:8px;padding:7px 12px;background:#10151e;color:#cdd6e2;cursor:pointer;">查看已有爬虫</span><span style="border:1px solid #2c3645;border-radius:8px;padding:7px 12px;background:#10151e;color:#cdd6e2;cursor:pointer;">仍要新建（填理由+审批）</span><span style="border:1px solid #4a241d;border-radius:8px;padding:7px 12px;color:#ff8473;cursor:pointer;">取消</span></div>
+                </div>
+                <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:15px 17px;flex:1;display:flex;flex-direction:column;">
+                  <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;margin-bottom:10px;">查重命中明细</div>
+                  <sc-for list="{{ dupRows }}" as="d" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #161d27;font-size:12px;"><span style="color:#aeb9c7;">{{ d.dim }}</span><span style="font-family:'JetBrains Mono',monospace;color:{{ d.color }};font-weight:600;">{{ d.val }}</span></div></sc-for>
+                  <div style="margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;padding-top:11px;">查重拦截计入作者审计轨迹 → 见「作者」</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= RULES ========================= -->
+        <sc-if value="{{ isRules }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;max-width:1480px;height:100%;">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="flex:1;border:1px solid #28323f;border-radius:8px;background:#0d121a;padding:8px 13px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#7c8696;">https://www.ccgp.gov.cn/cggg/zygg/?page=1</div>
+              <span style="border:1px solid #28323f;border-radius:8px;padding:8px 15px;font-size:12px;color:#cdd6e2;cursor:pointer;">加载</span>
+              <div style="display:flex;border:1px solid #28323f;border-radius:8px;overflow:hidden;font-size:12px;"><span style="padding:8px 13px;background:#16222a;color:#4cc9e0;font-weight:600;">可视化</span><span style="padding:8px 13px;border-left:1px solid #28323f;color:#7c8696;">代码钩子</span></div>
+            </div>
+            <div style="flex:1;display:grid;grid-template-columns:1.3fr 1fr 1.05fr;gap:13px;min-height:0;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:11px 14px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;">页面预览 · 点选生成 selector</div>
+                <div style="flex:1;padding:14px;background:#0a0d12;overflow:hidden;"><div style="border:1px solid #1c2431;border-radius:8px;height:100%;padding:13px;display:flex;flex-direction:column;gap:11px;background:#0d1219;">
+                  <div style="height:16px;width:55%;background:#1a212c;border-radius:4px;"></div>
+                  <div style="border:1.5px solid #4cc9e0;background:#0f1c20;border-radius:7px;padding:11px;position:relative;box-shadow:0 0 14px #4cc9e022;"><div style="position:absolute;top:-9px;left:9px;background:#4cc9e0;color:#06181c;font-family:'JetBrains Mono',monospace;font-size:10px;border-radius:4px;padding:1px 6px;font-weight:600;">.result-item</div><div style="height:11px;width:70%;background:#1d2935;border-radius:3px;margin-bottom:7px;"></div><div style="height:11px;width:42%;background:#1d2935;border-radius:3px;"></div></div>
+                  <div style="border:1px solid #1c2431;border-radius:7px;padding:11px;"><div style="height:11px;width:62%;background:#161d27;border-radius:3px;margin-bottom:7px;"></div><div style="height:11px;width:36%;background:#161d27;border-radius:3px;"></div></div>
+                  <div style="border:1px solid #1c2431;border-radius:7px;padding:11px;"><div style="height:11px;width:66%;background:#161d27;border-radius:3px;margin-bottom:7px;"></div><div style="height:11px;width:30%;background:#161d27;border-radius:3px;"></div></div>
+                </div></div>
+              </div>
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:11px 14px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;">字段映射</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#4cc9e0;">+ 添加字段</span></div>
+                <div style="flex:1;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:9px;">
+                  <sc-for list="{{ fields }}" as="f" hint-placeholder-count="5"><div style="border:1px solid #222b38;border-radius:9px;padding:9px 11px;background:#121823;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12.5px;font-weight:600;color:#dbe4ee;">{{ f.name }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;border:1px solid #2a3340;border-radius:8px;padding:1px 8px;color:#7c8696;">{{ f.type }}</span></div><div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5b6675;margin-top:5px;">{{ f.sel }}</div></div></sc-for>
+                </div>
+              </div>
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:11px 14px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;">抓取配置</div>
+                <div style="flex:1;overflow:auto;padding:13px 14px;display:flex;flex-direction:column;gap:12px;font-size:12px;">
+                  <div style="border:1px solid #222b38;border-radius:10px;padding:11px 13px;background:#121823;">
+                    <div style="font-weight:600;margin-bottom:8px;color:#4cc9e0;font-size:12px;">增量策略 <span style="color:#5b6675;font-weight:400;">招投标核心</span></div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="color:#5b6675;">增量字段</span><span style="font-family:'JetBrains Mono',monospace;color:#cdd6e2;">发布时间</span></div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;gap:8px;"><span style="color:#5b6675;flex:none;">停止条件</span><span style="text-align:right;color:#cdd6e2;font-size:11px;">发布日期<水位 / 连续50条已采</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#5b6675;">水位线</span><span style="font-family:'JetBrains Mono',monospace;color:#6fdf9c;font-size:11px;">2025-02-24 18:00</span></div>
+                  </div>
+                  <div style="border:1px solid #222b38;border-radius:10px;padding:11px 13px;background:#121823;">
+                    <div style="font-weight:600;margin-bottom:8px;color:#4cc9e0;font-size:12px;">代码钩子 <span style="color:#5b6675;font-weight:400;">配置为主 · 可插拔</span></div>
+                    <sc-for list="{{ hooks }}" as="h" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:9px;padding:4px 0;font-size:12px;color:#aeb9c7;"><span style="{{ h.box }}">{{ h.mark }}</span>{{ h.label }}</div></sc-for>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:#5b6675;">请求间隔</span><span style="color:#cdd6e2;">1–3s 随机</span></div>
+                  <div style="display:flex;justify-content:space-between;"><span style="color:#5b6675;">代理池</span><span style="color:#cdd6e2;">datacenter-cn</span></div>
+                  <div style="margin-top:auto;background:linear-gradient(135deg,#4cc9e0,#37a8bd);color:#06181c;font-weight:600;border-radius:9px;padding:10px;text-align:center;cursor:pointer;box-shadow:0 0 16px #4cc9e033;">保存并试运行（生成 v8）</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= SCHEDULE ========================= -->
+        <sc-if value="{{ isSchedule }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;max-width:1480px;">
+            <div style="display:flex;align-items:center;gap:11px;"><div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">调度 · 对账</div><div style="display:flex;border:1px solid #28323f;border-radius:8px;overflow:hidden;font-size:12px;margin-left:6px;"><span style="padding:6px 13px;background:#16222a;color:#4cc9e0;font-weight:600;">时间线</span><span style="padding:6px 13px;border-left:1px solid #28323f;color:#7c8696;">列表</span><span style="padding:6px 13px;border-left:1px solid #28323f;color:#7c8696;">日历</span></div><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5b6675;">今天 · 24h</span><div style="margin-left:auto;font-size:12.5px;font-weight:600;background:linear-gradient(135deg,#4cc9e0,#37a8bd);color:#06181c;border-radius:8px;padding:8px 15px;cursor:pointer;">+ 新建计划</div></div>
+            <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+              <div style="padding:12px 15px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">调度时间线</div>
+              <div style="display:flex;font-family:'JetBrains Mono',monospace;font-size:10px;color:#46505f;padding:9px 15px 0;justify-content:space-between;">00:00<span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+              <div style="padding:11px 15px 15px;display:flex;flex-direction:column;gap:9px;">
+                <sc-for list="{{ ganttRows }}" as="g" hint-placeholder-count="8"><div style="display:flex;align-items:center;gap:10px;"><span style="width:150px;flex:none;font-family:'JetBrains Mono',monospace;font-size:11px;color:#aeb9c7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ g.name }}</span><div style="flex:1;height:14px;background:#0d121a;border-radius:7px;position:relative;border:1px solid #161d27;"><span style="position:absolute;top:0;bottom:0;left:{{ g.left }};width:{{ g.width }};background:{{ g.color }};border-radius:7px;box-shadow:0 0 10px {{ g.glow }};"></span></div></div></sc-for>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1.15fr;gap:13px;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                <div style="padding:12px 15px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">队列状态</div>
+                <div style="padding:13px 15px;display:flex;flex-direction:column;gap:11px;">
+                  <sc-for list="{{ queues }}" as="q" hint-placeholder-count="4"><div style="border:1px solid #222b38;border-radius:9px;padding:10px 12px;background:#121823;"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;"><span style="font-family:'JetBrains Mono',monospace;color:#dbe4ee;">{{ q.name }}</span><span style="font-family:'JetBrains Mono',monospace;color:{{ q.color }};">{{ q.depth }}</span></div><div style="height:6px;background:#10151e;border-radius:4px;overflow:hidden;margin-top:8px;"><span style="display:block;height:100%;width:{{ q.fill }};background:{{ q.color }};box-shadow:0 0 8px {{ q.color }}66;"></span></div></div></sc-for>
+                </div>
+              </div>
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                <div style="padding:12px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">任务对账 / 死信</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">杜绝静默丢数据</span></div>
+                <div style="padding:14px 15px;display:flex;flex-direction:column;gap:11px;">
+                  <div style="display:flex;gap:10px;"><sc-for list="{{ reconcile }}" as="r" hint-placeholder-count="3"><div style="flex:1;border:1px solid #222b38;border-radius:9px;padding:11px;text-align:center;background:#121823;"><div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5b6675;">{{ r.label }}</div><div style="font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:600;margin-top:3px;color:#dbe4ee;">{{ r.value }}</div></div></sc-for></div>
+                  <div style="border:1px solid #4a241d;background:linear-gradient(180deg,#1a1110,#140c0b);border-radius:9px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-size:12px;font-weight:600;color:#ff8473;">⚠ 已分发但从未完成</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7c8696;margin-top:2px;">提前 ack / 预取丢失的根因 · 必须可见</div></div><span style="font-family:'Space Grotesk',sans-serif;font-size:25px;font-weight:600;color:#ff8473;">230</span></div>
+                  <div style="border:1px solid #222b38;border-radius:9px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;background:#121823;"><div><div style="font-size:12px;font-weight:600;color:#f5c266;">死信队列 DLQ</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7c8696;margin-top:2px;">每任务库留记录 · 丢了立刻看到</div></div><span style="display:flex;align-items:center;gap:10px;"><span style="font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:600;color:#f5c266;">47</span><span style="font-size:11px;border:1px solid #28323f;border-radius:7px;padding:5px 11px;color:#cdd6e2;cursor:pointer;">查看</span></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= ALERTS ========================= -->
+        <sc-if value="{{ isAlerts }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;max-width:1480px;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">告警 · 反爬</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:13px;">
+              <sc-for list="{{ alertKpis }}" as="k" hint-placeholder-count="4"><div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:13px 15px;"><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">{{ k.label }}</div><div style="font-family:'Space Grotesk',sans-serif;font-size:29px;font-weight:600;color:{{ k.color }};margin-top:4px;">{{ k.value }}</div></div></sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:13px;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                <div style="padding:12px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">告警规则</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#4cc9e0;">+ 新建规则</span></div>
+                <div style="display:grid;grid-template-columns:1.6fr 1.7fr 1.1fr 0.7fr;padding:8px 15px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;border-bottom:1px solid #161d27;">规则<span>条件</span><span>渠道</span><span>状态</span></div>
+                <sc-for list="{{ ruleRows }}" as="r" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:1.6fr 1.7fr 1.1fr 0.7fr;padding:11px 15px;font-size:12px;border-bottom:1px solid #141a23;align-items:center;"><span style="font-weight:600;color:#dbe4ee;">{{ r.name }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#7c8696;">{{ r.cond }}</span><span style="font-size:11px;color:#aeb9c7;">{{ r.chan }}</span><span style="{{ r.style }}">{{ r.state }}</span></div></sc-for>
+              </div>
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                <div style="padding:12px 15px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">反爬检测面板</div>
+                <div style="padding:16px;display:flex;flex-direction:column;gap:18px;">
+                  <div><div style="font-size:12px;font-weight:600;margin-bottom:11px;color:#cdd6e2;">HTTP 状态码分布 <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">1h</span></div><div style="display:flex;align-items:flex-end;gap:14px;height:100px;"><sc-for list="{{ statusBars }}" as="s" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;height:100%;"><div style="width:100%;background:{{ s.color }};border-radius:4px 4px 0 0;height:{{ s.h }};box-shadow:0 0 10px {{ s.color }}44;"></div><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#7c8696;">{{ s.label }}</span></div></sc-for></div></div>
+                  <div><div style="font-size:12px;font-weight:600;margin-bottom:9px;color:#cdd6e2;">验证码 / 封禁信号</div><sc-for list="{{ antiBot }}" as="a" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;font-size:12px;padding:7px 0;border-bottom:1px solid #161d27;"><span style="color:#aeb9c7;">{{ a.label }}</span><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:{{ a.color }};">{{ a.value }}</span></div></sc-for></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= AUTHORS ========================= -->
+        <sc-if value="{{ isAuthors }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;max-width:1480px;">
+            <div><div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">作者产出</div><div style="font-size:12px;color:#5b6675;margin-top:3px;">考评 = <span style="color:#94a3b8;">去重后、能持续出数据的唯一站点数</span>（非文件数 / 爬虫数）</div></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:13px;">
+              <sc-for list="{{ authorKpis }}" as="k" hint-placeholder-count="4"><div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;padding:13px 15px;"><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">{{ k.label }}</div><div style="font-family:'Space Grotesk',sans-serif;font-size:29px;font-weight:600;color:{{ k.color }};margin-top:4px;">{{ k.value }}</div></div></sc-for>
+            </div>
+            <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:1.2fr 1fr 1.7fr 0.9fr 1.3fr 1fr;padding:11px 16px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;border-bottom:1px solid #161d27;">作者<span>新建(去重)</span><span>健康 / 挂掉</span><span>存活率</span><span style="color:#4cc9e0;">持续出数据(考评)</span><span>查重拦截</span></div>
+              <sc-for list="{{ authorRows }}" as="a" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:1.2fr 1fr 1.7fr 0.9fr 1.3fr 1fr;padding:13px 16px;font-size:12.5px;border-bottom:1px solid #141a23;align-items:center;"><span style="font-weight:600;color:#dbe4ee;">{{ a.name }}</span><span style="font-family:'JetBrains Mono',monospace;color:#aeb9c7;">{{ a.sites }}</span><span style="display:flex;align-items:center;gap:9px;"><span style="flex:1;height:8px;background:#10151e;border-radius:5px;overflow:hidden;display:flex;"><span style="height:100%;width:{{ a.healthPct }};background:#56d68a;box-shadow:0 0 7px #56d68a55;"></span><span style="height:100%;flex:1;background:#ff6f59;"></span></span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7c8696;width:32px;">{{ a.healthPct }}</span></span><span style="font-family:'JetBrains Mono',monospace;color:#aeb9c7;">{{ a.alive }}</span><span style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;color:#4cc9e0;">{{ a.effective }}</span><span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:{{ a.dupColor }};">{{ a.dup }}</span></div></sc-for>
+            </div>
+            <div style="border:1px solid #2a2614;border-radius:12px;background:#151204;padding:10px 14px;font-size:11.5px;color:#f5c266;line-height:1.5;">查重拦截高的作者（实习生A/B）= 曾用旧站冒充新站被系统拦下 — 文件数可糊弄，去重持续出数据不能。</div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= REALTIME A ========================= -->
+        <sc-if value="{{ isRtA }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;max-width:1480px;">
+            <div style="display:flex;align-items:flex-end;gap:12px;"><div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">实时盯盘</div><div style="font-size:12px;color:#5b6675;">吞吐 / 节点负载 / 事件流 — 日常分诊请用「巡检分诊」</div><div style="margin-left:auto;display:flex;border:1px solid #28323f;border-radius:8px;overflow:hidden;font-size:12px;"><span style="padding:7px 13px;background:#16222a;color:#4cc9e0;font-weight:600;">吞吐视图</span><span onClick="{{ goRtB }}" style="padding:7px 13px;border-left:1px solid #28323f;color:#7c8696;cursor:pointer;">节点控制台</span></div></div>
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:11px;">
+              <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6"><div style="border:1px solid #1f2734;border-radius:13px;background:#0f141d;padding:11px 13px;"><div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5b6675;">{{ k.label }}</div><div style="font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600;color:{{ k.color }};margin-top:3px;">{{ k.value }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#5b6675;margin-top:1px;">{{ k.delta }}</div></div></sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:13px;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                <div style="padding:12px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">集群节点负载</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">96 节点 · prod</span></div>
+                <div style="padding:15px;display:flex;flex-direction:column;gap:11px;"><div style="display:grid;grid-template-columns:repeat(24,1fr);gap:5px;"><sc-for list="{{ nodes }}" as="n" hint-placeholder-count="96"><div style="{{ n.style }}"></div></sc-for></div>
+                <div style="display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7c8696;border-top:1px solid #161d27;padding-top:9px;"><span style="display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;border-radius:2px;background:#1d3a4a;"></span>正常</span><span style="display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;border-radius:2px;background:#f5b84d;"></span>高负载</span><span style="display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;border-radius:2px;background:#ff6f59;"></span>异常/离线</span></div></div>
+              </div>
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                <div style="padding:12px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">实时吞吐 req/s</span><span style="font-family:'JetBrains Mono',monospace;font-size:16px;color:#4cc9e0;">1.24k</span></div>
+                <div style="padding:16px;"><svg viewBox="0 0 600 200" preserveAspectRatio="none" style="width:100%;height:150px;"><defs><linearGradient id="rtgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4cc9e0" stop-opacity="0.35"/><stop offset="100%" stop-color="#4cc9e0" stop-opacity="0"/></linearGradient></defs><line x1="0" y1="50" x2="600" y2="50" stroke="#161d27" stroke-width="1"/><line x1="0" y1="100" x2="600" y2="100" stroke="#161d27" stroke-width="1"/><line x1="0" y1="150" x2="600" y2="150" stroke="#161d27" stroke-width="1"/><path d="M0,150 40,120 80,135 120,90 160,110 200,70 240,95 280,55 320,80 360,45 400,72 440,40 480,66 520,35 560,58 600,30 L600,200 L0,200 Z" fill="url(#rtgrad)"/><polyline points="0,150 40,120 80,135 120,90 160,110 200,70 240,95 280,55 320,80 360,45 400,72 440,40 480,66 520,35 560,58 600,30" fill="none" stroke="#4cc9e0" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" style="filter:drop-shadow(0 0 4px #4cc9e088);"/></svg></div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:13px;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#080b10;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:11px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">实时事件流</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6fdf9c;display:flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#56d68a;box-shadow:0 0 7px #56d68a;animation:hfpulse 1.5s infinite;"></span>LIVE</span></div>
+                <div style="padding:11px 15px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.95;"><sc-for list="{{ logLines }}" as="l" hint-placeholder-count="10"><div style="{{ l.style }}">{{ l.txt }}</div></sc-for></div>
+              </div>
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;">
+                <div style="padding:11px 15px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;">活跃告警</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:#1a1110;border:1px solid #4a241d;color:#ff8473;border-radius:8px;padding:1px 8px;">5</span></div>
+                <div style="padding:11px 13px;display:flex;flex-direction:column;gap:8px;"><sc-for list="{{ alertFeed }}" as="a" hint-placeholder-count="5"><div style="border:1px solid #222b38;border-left:3px solid {{ a.color }};border-radius:9px;background:#121823;padding:9px 11px;"><div style="font-size:12px;font-weight:600;color:#dbe4ee;">{{ a.title }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;margin-top:2px;">{{ a.meta }}</div></div></sc-for></div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ========================= REALTIME B / NODES ========================= -->
+        <sc-if value="{{ isRtB }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:13px;max-width:1480px;height:100%;">
+            <div style="display:flex;align-items:flex-end;gap:12px;"><div style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;">节点 · 运维控制台</div><div style="font-size:12px;color:#5b6675;">盯节点与实时信号流</div><div style="margin-left:auto;display:flex;border:1px solid #28323f;border-radius:8px;overflow:hidden;font-size:12px;"><span onClick="{{ goRtA }}" style="padding:7px 13px;color:#7c8696;cursor:pointer;">吞吐视图</span><span style="padding:7px 13px;border-left:1px solid #28323f;background:#16222a;color:#4cc9e0;font-weight:600;">节点控制台</span></div></div>
+            <div style="flex:1;display:grid;grid-template-columns:230px 1fr 300px;gap:13px;min-height:0;">
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:11px 14px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;">节点集群 96</div>
+                <div style="flex:1;overflow:auto;padding:9px 11px;display:flex;flex-direction:column;gap:6px;"><sc-for list="{{ nodeList }}" as="n" hint-placeholder-count="14"><div style="border:1px solid #1c2431;border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:9px;background:#121823;"><span style="width:8px;height:8px;border-radius:50%;background:{{ n.dot }};box-shadow:0 0 7px {{ n.dot }};flex:none;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#cdd6e2;flex:1;">{{ n.name }}</span><span style="width:44px;height:6px;background:#10151e;border-radius:4px;overflow:hidden;"><span style="display:block;height:100%;width:{{ n.load }};background:#4cc9e0;"></span></span></div></sc-for></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:13px;min-width:0;">
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;"><sc-for list="{{ kpisB }}" as="k" hint-placeholder-count="4"><div style="border:1px solid #1f2734;border-radius:13px;background:#0f141d;padding:11px 13px;"><div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5b6675;">{{ k.label }}</div><div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;color:{{ k.color }};margin-top:3px;">{{ k.value }}</div></div></sc-for></div>
+                <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;flex:1;display:flex;flex-direction:column;min-height:0;"><div style="padding:11px 14px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;">抓取吞吐 + 错误率 <span style="font-weight:400;color:#5b6675;font-size:10px;">最近 6 小时</span></div><div style="flex:1;padding:14px;display:flex;align-items:flex-end;gap:4px;"><sc-for list="{{ bars }}" as="b" hint-placeholder-count="30"><div style="flex:1;background:linear-gradient(180deg,#4cc9e0,#2a7d8c);border-radius:2px 2px 0 0;height:{{ b }};opacity:.8;"></div></sc-for></div></div>
+                <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;flex:1;display:flex;flex-direction:column;min-height:0;"><div style="padding:11px 14px;border-bottom:1px solid #1c2431;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;">运行中任务</div><div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:7px 14px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5b6675;border-bottom:1px solid #161d27;">爬虫<span>节点</span><span>速率</span><span>进度</span></div><div style="flex:1;overflow:auto;"><sc-for list="{{ runRows }}" as="r" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:9px 14px;font-size:11.5px;border-bottom:1px solid #141a23;align-items:center;"><span style="font-family:'JetBrains Mono',monospace;color:#cdd6e2;">{{ r.name }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">{{ r.node }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#aeb9c7;">{{ r.rate }}</span><span style="height:6px;background:#10151e;border-radius:4px;overflow:hidden;"><span style="display:block;height:100%;width:{{ r.prog }};background:#56d68a;"></span></span></div></sc-for></div></div>
+              </div>
+              <div style="border:1px solid #1f2734;border-radius:14px;background:#0f141d;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="padding:11px 14px;border-bottom:1px solid #1c2431;display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12.5px;">告警 & 反爬信号</span><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6fdf9c;display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#56d68a;box-shadow:0 0 6px #56d68a;animation:hfpulse 1.5s infinite;"></span>LIVE</span></div>
+                <div style="flex:1;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px;"><sc-for list="{{ signalFeed }}" as="a" hint-placeholder-count="6"><div style="border:1px solid #222b38;border-left:3px solid {{ a.color }};border-radius:8px;background:#121823;padding:8px 10px;"><div style="font-size:11.5px;font-weight:600;color:#dbe4ee;">{{ a.title }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5b6675;margin-top:2px;">{{ a.meta }}</div></div></sc-for></div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { screen: 'triage' };
+  renderVals() {
+    const screen = this.state.screen;
+    const go = (s) => () => { this.setState({ screen: s }); document.querySelector('section > div')?.scrollTo(0,0); };
+
+    // ---- palette ----
+    const RED='#ff6f59', AMB='#f5b84d', GRN='#56d68a', CY='#4cc9e0';
+    const REDt='#ff8473', AMBt='#f5c266', GRNt='#6fdf9c';
+
+    // ---- nav ----
+    const navIdle = "display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;font-size:13px;color:#8b97a8;cursor:pointer;margin-bottom:2px;transition:all .15s;";
+    const navAct  = "display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;font-size:13px;color:#e8eef6;font-weight:600;cursor:pointer;margin-bottom:2px;background:linear-gradient(90deg,#4cc9e018,transparent);border-left:2px solid #4cc9e0;padding-left:9px;";
+    const screenToNav = { triage:'triage', rtA:'nodes', spiders:'spiders', detail:'spiders', run:'spiders', versions:'spiders', wizard:'spiders', schedule:'schedule', rules:'data', rtB:'nodes', alerts:'alerts', authors:'authors' };
+    const activeNav = screenToNav[screen];
+    const redBadge = "font-family:'JetBrains Mono',monospace;font-size:9.5px;background:#1a1110;border:1px solid #4a241d;color:#ff8473;border-radius:7px;padding:1px 6px;";
+    const ambBadge = "font-family:'JetBrains Mono',monospace;font-size:9.5px;background:#16140a;border:1px solid #3a2e16;color:#f5c266;border-radius:7px;padding:1px 6px;";
+    const mkNav = (defs) => defs.map(([key,icon,label,scr,badge,bStyle]) => ({ icon, label, onClick: go(scr), badge: badge||'', badgeStyle: bStyle||redBadge, style: key===activeNav ? navAct : navIdle }));
+    const navTop = mkNav([
+      ['triage','◎','巡检分诊','triage','64',ambBadge],
+      ['nodes','◈','实时 / 节点','rtB','',redBadge],
+      ['alerts','⚠','告警 / 反爬','alerts','5',redBadge],
+    ]);
+    const navBot = mkNav([
+      ['spiders','✦','爬虫','spiders','',redBadge],
+      ['schedule','◷','调度','schedule','',redBadge],
+      ['data','▤','数据 / 规则','rules','',redBadge],
+      ['authors','◍','作者 / 权限','authors','',redBadge],
+    ]);
+
+    // ---- core watch strip ----
+    const sparkCliff='0,6 18,5 36,8 54,6 72,7 86,5 100,23';
+    const sparkFlat='0,20 25,18 50,21 75,19 100,22';
+    const sparkUp='0,20 20,17 40,18 60,12 80,14 100,7';
+    const dotS=(c)=>`width:8px;height:8px;border-radius:50%;background:${c};box-shadow:0 0 8px ${c};flex:none;`;
+    const csCard=(c)=>`border:1px solid ${c==='r'?'#3d211b':c==='y'?'#3a2e16':'#1d2a22'};border-radius:11px;background:#121823;padding:10px 11px;cursor:pointer;`;
+    const goDetail = go('detail');
+    const coreSites = [
+      {name:'digikey_search',today:'0',base:'8.4k',dot:RED,valColor:REDt,spark:sparkCliff,dotStyle:dotS(RED),card:csCard('r'),onClick:goDetail},
+      {name:'szlcsc_立创商城',today:'7.1k',base:'7k',dot:GRN,valColor:GRNt,spark:sparkUp,dotStyle:dotS(GRN),card:csCard('g'),onClick:goDetail},
+      {name:'mouser_list',today:'0',base:'1.5k',dot:AMB,valColor:AMBt,spark:sparkFlat,dotStyle:dotS(AMB),card:csCard('y'),onClick:goDetail},
+      {name:'ccgp_中央政采',today:'0',base:'1.2k',dot:RED,valColor:REDt,spark:sparkCliff,dotStyle:dotS(RED),card:csCard('r'),onClick:goDetail},
+      {name:'findchips_比价',today:'3.2k',base:'3k',dot:GRN,valColor:GRNt,spark:sparkUp,dotStyle:dotS(GRN),card:csCard('g'),onClick:goDetail},
+      {name:'ti_参数搜索',today:'340',base:'5.1k',dot:RED,valColor:REDt,spark:sparkCliff,dotStyle:dotS(RED),card:csCard('r'),onClick:goDetail},
+      {name:'chinabidding',today:'2.4k',base:'2.3k',dot:GRN,valColor:GRNt,spark:sparkUp,dotStyle:dotS(GRN),card:csCard('g'),onClick:goDetail},
+    ];
+
+    // ---- three-state cards ----
+    const tcCard=(c)=>`position:relative;overflow:hidden;border:1px solid ${c==='r'?'#3d211b':c==='y'?'#3a2e16':c==='g'?'#1d3326':'#1f2734'};border-radius:14px;background:#0f141d;padding:14px 16px;`;
+    const triCards = [
+      {label:'结构性故障',value:'23',tag:'STRUCT',sub:'命中0行 / 非200 / 必填抽不到 → 改配置',fg:REDt,dotStyle:dotS(RED),bar:RED,card:tcCard('r')},
+      {label:'数据干涸',value:'41',tag:'DRY',sub:'跑通·结构正常·连续N天0新数据 → 确认/压制/升级',fg:AMBt,dotStyle:dotS(AMB),bar:AMB,card:tcCard('y')},
+      {label:'健康',value:'1,936',tag:'OK',sub:'正常出数据',fg:GRNt,dotStyle:dotS(GRN),bar:GRN,card:tcCard('g')},
+      {label:'本轮巡检',value:'12:00',tag:'SCAN',sub:'2,000 站 · 每小时一轮',fg:'#cdd6e2',dotStyle:dotS(CY),bar:CY,card:tcCard('n')},
+    ];
+
+    // ---- heatmap cells ----
+    const triCells=[];
+    for(let i=0;i<297;i++){ let c='#16241b',sh=''; if(i<22){c=RED;sh=`box-shadow:0 0 6px ${RED}99;`;} else if(i<63){c=AMB;sh=`box-shadow:0 0 5px ${AMB}88;`;} triCells.push({ style:`width:100%;aspect-ratio:1/1;border-radius:2px;background:${c};${sh}` }); }
+
+    // ---- triage queue ----
+    const triRows = [
+      {name:'ccgp_中央政府采购',domain:'招投标',value:'P0·6%',valColor:REDt,signal:'列表 selector 命中 0 行（疑改版）',spark:sparkCliff,today:'0',base:'~1,240/天',color:RED,isDry:false,onClick:goDetail},
+      {name:'digikey_search',domain:'IC',value:'P0·31%',valColor:REDt,signal:'HTTP 403 全量（疑封禁）',spark:sparkCliff,today:'0',base:'~8,400/天',color:RED,isDry:false,onClick:goDetail},
+      {name:'ti_参数搜索',domain:'IC',value:'P1·18%',valColor:REDt,signal:'必填字段[价格]缺失 92%',spark:sparkCliff,today:'340',base:'~5,100/天',color:RED,isDry:false,onClick:goDetail},
+      {name:'jiangsu_政府采购',domain:'招投标',value:'P1·3%',valColor:AMBt,signal:'列表命中 0 行',spark:sparkCliff,today:'0',base:'~620/天',color:RED,isDry:false,onClick:goDetail},
+      {name:'shenzhen_交易中心',domain:'招投标',value:'P0·<1%',valColor:AMBt,signal:'结构正常·新增0（连续3天）',spark:sparkFlat,today:'0',base:'~80/天',color:AMB,isDry:true,onClick:goDetail},
+      {name:'mouser_list',domain:'IC',value:'P1·5%',valColor:AMBt,signal:'命中水位停·新增0·重复2.1k',spark:sparkFlat,today:'0',base:'~1,500/天',color:AMB,isDry:true,onClick:goDetail},
+      {name:'beijing_财政',domain:'招投标',value:'P2·<1%',valColor:'#7c8696',signal:'新增0（连续5天，基线本就低）',spark:sparkFlat,today:'0',base:'~0–3/天',color:AMB,isDry:true,onClick:goDetail},
+    ];
+    const layerLegend = [
+      {layer:'L1 · HTTP',signal:'列表页状态码',zero:'非200=挂了',color:REDt},
+      {layer:'L2 · 列表解析',signal:'selector 命中行数',zero:'0行≈改版',color:REDt},
+      {layer:'L3 · 详情解析',signal:'必填字段抽到率',zero:'详情模板挂了',color:REDt},
+      {layer:'L4 · 数据',signal:'去重后新增条数',zero:'前三层正常=真没数据',color:GRNt},
+    ];
+
+    // ---- spiders list ----
+    const filters = [
+      {title:'项目 / 域',opts:['招投标采集','IC 元器件']},
+      {title:'健康态',opts:['🔴 结构故障','🟡 数据干涸','🟢 健康']},
+      {title:'执行态',opts:['运行中','已暂停','已停用','失败']},
+      {title:'负责人',opts:['李雷','韩梅梅','王强','实习生A']},
+    ];
+    const stB=(c,bg,bd)=>`font-family:'JetBrains Mono',monospace;font-size:10px;border-radius:8px;padding:2px 8px;color:${c};background:${bg};border:1px solid ${bd};text-align:center;`;
+    const stRun=stB(GRNt,'#0f1a14','#1d3326'), stPause=stB('#94a3b8','#141a23','#28323f'), stErr=stB(REDt,'#1a1110','#4a241d'), stOff=stB('#5b6675','#101620','#222b38');
+    const sp=(name,domain,owner,status,statusStyle,health,healthColor,sched,last,rate,rateColor)=>({name,domain,owner,status,statusStyle,health,healthColor,sched,last,rate,rateColor,onClick:goDetail});
+    const spiderRows = [
+      sp('ccgp_中央政府采购','招投标','李雷','运行中',stRun,'结构故障',RED,'*/30 * * * *','2分钟前','99.1%',GRNt),
+      sp('jiangsu_政府采购','招投标','李雷','运行中',stRun,'结构故障',RED,'0 */1 * * *','12分钟前','97.0%',GRNt),
+      sp('digikey_search','IC','王强','失败',stErr,'结构故障',RED,'*/15 * * * *','3分钟前','62.0%',REDt),
+      sp('ti_参数搜索','IC','实习生A','运行中',stRun,'结构故障',RED,'*/30 * * * *','6分钟前','95.0%',GRNt),
+      sp('shenzhen_交易中心','招投标','韩梅梅','运行中',stRun,'数据干涸',AMB,'*/30 * * * *','5分钟前','99.5%',GRNt),
+      sp('mouser_list','IC','王强','运行中',stRun,'数据干涸',AMB,'*/20 * * * *','8分钟前','98.8%',GRNt),
+      sp('beijing_财政','招投标','实习生B','已暂停',stPause,'数据干涸',AMB,'0 2 * * *','6小时前','90.0%',AMBt),
+      sp('szlcsc_立创商城','IC','韩梅梅','运行中',stRun,'健康',GRN,'*/10 * * * *','刚刚','99.7%',GRNt),
+      sp('chinabidding_千里马','招投标','韩梅梅','运行中',stRun,'健康',GRN,'0 8,12,18 * * *','1小时前','96.4%',GRNt),
+      sp('findchips_比价','IC','王强','运行中',stRun,'健康',GRN,'手动','刚刚','99.0%',GRNt),
+      sp('guangdong_招标','招投标','李雷','运行中',stRun,'健康',GRN,'*/20 * * * *','8分钟前','95.5%',GRNt),
+      sp('arrow_库存','IC','实习生A','已停用',stOff,'—','#5b6675','—','3天前','—','#5b6675'),
+    ];
+
+    // ---- detail ----
+    const vb=(c,bg,bd)=>`font-family:'JetBrains Mono',monospace;font-size:10.5px;border-radius:8px;padding:2px 8px;color:${c};background:${bg};border:1px solid ${bd};text-align:center;`;
+    const layers = [
+      {layer:'L1 HTTP',signal:'列表页状态码',value:'200 OK',verdict:'● 正常',style:vb(GRNt,'#0f1a14','#1d3326')},
+      {layer:'L2 列表解析',signal:'selector 命中行数',value:'0 行',verdict:'● 异常·改版',style:vb(REDt,'#1a1110','#4a241d')},
+      {layer:'L3 详情解析',signal:'必填字段抽到率',value:'— 未执行',verdict:'○ 上游中断',style:vb('#94a3b8','#141a23','#28323f')},
+      {layer:'L4 数据',signal:'去重后新增条数',value:'0 条',verdict:'● 无产出',style:vb(REDt,'#1a1110','#4a241d')},
+    ];
+    const baseBars=[]; const bh=['72%','80%','68%','85%','78%','90%','70%','82%','76%','88%','74%','80%','69%','3%'];
+    for(let i=0;i<14;i++){ const last=i===13; baseBars.push({ h:bh[i], color: last?RED:'linear-gradient(180deg,#37a8bd,#1d4a54)', glow: last?`0 0 10px ${RED}77`:'none' }); }
+    const recentRuns = [
+      {id:'#5822',time:'2分钟前',exec:'跑成功',data:'新增 0',dataColor:REDt},
+      {id:'#5821',time:'32分钟前',exec:'跑成功',data:'新增 0',dataColor:REDt},
+      {id:'#5820',time:'1小时前',exec:'跑成功',data:'新增 0',dataColor:REDt},
+      {id:'#5819',time:'1.5小时前',exec:'跑成功',data:'新增 2',dataColor:'#7c8696'},
+    ];
+
+    // ---- run ----
+    const lg=(t,lvl,txt)=>{ const c={INFO:'#8b97a8',OK:GRNt,WARN:AMBt,ERR:REDt}[lvl]; return { t, txt, style:`color:${c};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;` }; };
+    const runLog = [
+      lg('14:00:00','INFO','spider 启动 · concurrency=8 · proxy=datacenter-cn'),
+      lg('14:00:01','INFO','GET /cggg/zygg/?page=1 → 200 (410ms)'),
+      lg('14:00:01','OK','list selector .result-item 命中 48 行'),
+      lg('14:00:02','OK','详情字段[标题/采购单位/预算/发布时间] 抽取 OK'),
+      lg('14:00:03','INFO','去重：48 中 46 已采过，新增 2'),
+      lg('14:00:04','INFO','GET /cggg/zygg/?page=2 → 200 (388ms)'),
+      lg('14:00:05','OK','命中 48 行 · 新增 1 · 重复 47'),
+      lg('14:00:06','WARN','page=3 首条发布时间 < 水位 2025-02-24 18:00'),
+      lg('14:00:06','OK','✓ 命中增量水位 → 正常停止翻页'),
+      lg('14:00:07','INFO','写入 PG bid_notices (batch 3)'),
+      lg('14:00:07','OK','✓ 入库成功 · 本轮新增 3 条'),
+      lg('14:00:08','INFO','必填字段缺失率 1.2% · 错误率 0.8%'),
+      lg('14:00:08','OK','✓ 运行结束 · 结论：真实新增少（非故障）'),
+    ];
+    const runStats = [
+      {label:'请求数',value:'6',color:'#dbe4ee'},{label:'速率',value:'18/s',color:'#dbe4ee'},
+      {label:'list 命中行数',value:'48',color:GRNt},{label:'去重新增',value:'3',color:'#dbe4ee'},
+      {label:'重复(已采)',value:'141',color:'#94a3b8'},{label:'必填缺失率',value:'1.2%',color:GRNt},
+      {label:'水位命中',value:'是 ✓',color:GRNt},{label:'错误率',value:'0.8%',color:GRNt},
+    ];
+    const stages = [
+      {name:'列表抓取',pct:'100%',note:'命中48行'},{name:'详情抓取',pct:'100%',note:'字段OK'},
+      {name:'去重/增量',pct:'100%',note:'水位停'},{name:'入库',pct:'100%',note:'新增3'},
+    ];
+
+    // ---- versions ----
+    const vrow=(live)=>`padding:12px 15px;border-bottom:1px solid #141a23;${live?'background:linear-gradient(90deg,#0f1a1422,transparent);':''}`;
+    const versions = [
+      {ver:'v7',live:true,author:'李雷',time:'02-25',msg:'细化详情字段（增加正文）'},
+      {ver:'v6',live:false,author:'李雷',time:'02-20',msg:'修复列表分页 selector'},
+      {ver:'v5',live:false,author:'韩梅梅',time:'01-12',msg:'增加预算金额字段'},
+      {ver:'v4',live:false,author:'李雷',time:'2024-12-30',msg:'初版：列表 + 详情'},
+      {ver:'v3',live:false,author:'李雷',time:'2024-12-18',msg:'调整请求间隔'},
+      {ver:'v2',live:false,author:'实习生A',time:'2024-11-20',msg:'补充地区字段'},
+      {ver:'v1',live:false,author:'李雷',time:'2024-11-03',msg:'创建'},
+    ].map(v=>({...v, row:vrow(v.live)}));
+    const dl=(t,k)=>{ const c={add:GRNt,del:REDt,chg:AMBt,ctx:'#5b6675'}[k]; return { txt:t, style:`color:${c};` }; };
+    const diffLines = [
+      dl('  fields:','ctx'),
+      dl('+   正文: { type: text, sel: ".detail .content" }','add'),
+      dl('~   list_selector: ".list li"  →  ".result-item"','chg'),
+      dl('    标题: { type: text, sel: ".result-item h3" }','ctx'),
+      dl('    采购单位: { type: text, sel: ".result-item .org" }','ctx'),
+      dl('  pagination:','ctx'),
+      dl('~   stop: "page>20"  →  "publish_date < watermark"','chg'),
+      dl('  incremental:','ctx'),
+      dl('+   field: 发布时间','add'),
+      dl('+   watermark: 2025-02-24 18:00','add'),
+    ];
+
+    // ---- wizard ----
+    const wsDone="font-family:'JetBrains Mono',monospace;font-size:11px;border-radius:20px;padding:5px 11px;background:#0f1a14;color:#6fdf9c;border:1px solid #1d3326;";
+    const wsCur="font-family:'JetBrains Mono',monospace;font-size:11px;border-radius:20px;padding:5px 11px;background:linear-gradient(135deg,#4cc9e0,#37a8bd);color:#06181c;font-weight:600;";
+    const wsTodo="font-family:'JetBrains Mono',monospace;font-size:11px;border-radius:20px;padding:5px 11px;background:#10151e;color:#5b6675;border:1px solid #222b38;";
+    const wizSteps = [
+      {label:'1 基本信息',style:wsDone},{label:'2 目标URL',style:wsDone},{label:'3 查重',style:wsCur},
+      {label:'4 可视化规则',style:wsTodo},{label:'5 增量/钩子',style:wsTodo},{label:'6 调度',style:wsTodo},{label:'7 试运行',style:wsTodo},
+    ];
+    const dupRows = [
+      {dim:'目标域名 ccgp.gov.cn',val:'完全一致',color:REDt},
+      {dim:'URL 模式 /cggg/zygg/',val:'一致',color:REDt},
+      {dim:'字段配置重合度',val:'92%',color:REDt},
+    ];
+
+    // ---- rules ----
+    const fields = [
+      {name:'标题',type:'text',sel:'.result-item h3'},
+      {name:'采购单位',type:'text',sel:'.result-item .org'},
+      {name:'预算金额',type:'number',sel:'.result-item .budget'},
+      {name:'发布时间',type:'date',sel:'.result-item .date'},
+      {name:'公告类型',type:'enum',sel:'.result-item .type'},
+    ];
+    const hkOn="width:16px;height:16px;border-radius:4px;background:#16222a;border:1px solid #4cc9e055;color:#4cc9e0;display:flex;align-items:center;justify-content:center;font-size:10px;flex:none;";
+    const hkOff="width:16px;height:16px;border-radius:4px;background:#10151e;border:1px solid #2c3645;color:transparent;display:flex;align-items:center;justify-content:center;font-size:10px;flex:none;";
+    const hooks = [
+      {mark:'✓',box:hkOn,label:'签名 / sign 参数钩子'},
+      {mark:'',box:hkOff,label:'自定义解析钩子'},
+      {mark:'✓',box:hkOn,label:'自定义翻页钩子'},
+      {mark:'✓',box:hkOn,label:'需要 JS 渲染'},
+      {mark:'',box:hkOff,label:'登录态 / Cookie'},
+    ];
+
+    // ---- schedule ----
+    const ganttRows = [
+      {name:'ccgp_中央政府采购',left:'4%',width:'18%',color:CY,glow:CY},
+      {name:'digikey_search',left:'10%',width:'26%',color:GRN,glow:GRN},
+      {name:'szlcsc_立创商城',left:'37%',width:'30%',color:'#9c8cf5',glow:'#9c8cf5'},
+      {name:'guangdong_招标',left:'33%',width:'9%',color:GRN,glow:GRN},
+      {name:'mouser_list',left:'55%',width:'14%',color:CY,glow:CY},
+      {name:'chinabidding_千里马',left:'62%',width:'20%',color:'#9c8cf5',glow:'#9c8cf5'},
+      {name:'ti_参数搜索',left:'8%',width:'5%',color:GRN,glow:GRN},
+      {name:'beijing_财政',left:'72%',width:'16%',color:CY,glow:CY},
+    ];
+    const queues = [
+      {name:'default',depth:'24.1k',color:AMB,fill:'78%'},
+      {name:'high-priority',depth:'1.2k',color:GRN,fill:'22%'},
+      {name:'retry',depth:'3.4k',color:RED,fill:'58%'},
+      {name:'low',depth:'420',color:GRN,fill:'10%'},
+    ];
+    const reconcile = [{label:'已分发',value:'12,840'},{label:'已开始',value:'12,790'},{label:'已完成',value:'12,610'}];
+
+    // ---- alerts ----
+    const alertKpis = [{label:'活跃告警',value:'5',color:REDt},{label:'今日触发',value:'47',color:AMBt},{label:'反爬命中',value:'1.2k',color:REDt},{label:'被封 IP',value:'18',color:AMBt}];
+    const rOn=stB(GRNt,'#0f1a14','#1d3326'), rOff=stB('#5b6675','#101620','#222b38');
+    const ruleRows = [
+      {name:'list 命中 0 行',cond:'list_rows == 0',chan:'钉钉/邮件',state:'启用',style:rOn},
+      {name:'必填字段缺失',cond:'missing > 30%',chan:'钉钉',state:'启用',style:rOn},
+      {name:'抓取量骤降',cond:'volume < -50%基线',chan:'钉钉/邮件',state:'启用',style:rOn},
+      {name:'节点离线',cond:'heartbeat > 60s',chan:'PagerDuty',state:'启用',style:rOn},
+      {name:'队列积压',cond:'depth > 20000',chan:'钉钉',state:'启用',style:rOn},
+      {name:'429/403 激增',cond:'count(5m) > 500',chan:'Slack',state:'启用',style:rOn},
+      {name:'已分发未完成',cond:'dispatched-done>100',chan:'钉钉',state:'启用',style:rOn},
+    ];
+    const statusBars = [{label:'2xx',h:'90%',color:GRN},{label:'403',h:'40%',color:AMB},{label:'429',h:'52%',color:CY},{label:'5xx',h:'20%',color:RED}];
+    const antiBot = [{label:'验证码命中率',value:'18.4% ↑',color:REDt},{label:'IP 封禁 (1h)',value:'18',color:AMBt},{label:'代理池可用率',value:'62%',color:AMBt}];
+
+    // ---- authors ----
+    const authorKpis = [{label:'作者',value:'8',color:'#dbe4ee'},{label:'唯一站点(去重)',value:'1,840',color:'#dbe4ee'},{label:'健康站点',value:'1,610',color:GRNt},{label:'平均存活率',value:'87%',color:GRNt}];
+    const authorRows = [
+      {name:'李雷',sites:'420',healthPct:'88%',alive:'91%',effective:'382',dup:'12',dupColor:'#7c8696'},
+      {name:'韩梅梅',sites:'360',healthPct:'83%',alive:'85%',effective:'300',dup:'8',dupColor:'#7c8696'},
+      {name:'王强',sites:'290',healthPct:'81%',alive:'80%',effective:'235',dup:'9',dupColor:'#7c8696'},
+      {name:'赵敏',sites:'240',healthPct:'86%',alive:'88%',effective:'210',dup:'5',dupColor:'#7c8696'},
+      {name:'实习生A',sites:'180',healthPct:'41%',alive:'38%',effective:'70',dup:'31',dupColor:REDt},
+      {name:'实习生B',sites:'150',healthPct:'36%',alive:'33%',effective:'54',dup:'27',dupColor:REDt},
+    ];
+
+    // ---- realtime A ----
+    const nodes=[];
+    for(let i=0;i<96;i++){ let c='#1d3a4a',sh=''; if(i%17===6||i%23===10){c=RED;sh=`box-shadow:0 0 6px ${RED}88;`;} else if(i%5===2||i%7===4){c=AMB;sh=`box-shadow:0 0 5px ${AMB}77;`;} nodes.push({ style:`width:100%;aspect-ratio:1/1;border-radius:3px;background:${c};${sh}` }); }
+    const kpis = [
+      {label:'运行中任务',value:'342',color:'#dbe4ee',delta:'▲ 12'},{label:'今日抓取量',value:'4.8M',color:'#dbe4ee',delta:'▲ 6.2%'},
+      {label:'成功率',value:'97.3%',color:GRNt,delta:'稳定'},{label:'失败(24h)',value:'1.2k',color:REDt,delta:'▲ 18%'},
+      {label:'活跃节点',value:'88/96',color:'#dbe4ee',delta:'2 离线'},{label:'队列积压',value:'24.1k',color:AMBt,delta:'▲ 上升'},
+    ];
+    const elog=(lvl,txt)=>{ const c={INFO:'#8b97a8',OK:GRNt,WARN:AMBt,ERR:REDt}[lvl]; return { txt, style:`color:${c};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;` }; };
+    const logLines = [
+      elog('OK','12:04:21  ccgp_中央政采  ✓ 抓取 48 条 (node-07)'),
+      elog('INFO','12:04:20  digikey_search 调度触发 → 队列'),
+      elog('WARN','12:04:19  mouser_list    429 限流，退避 4s'),
+      elog('OK','12:04:18  szlcsc_立创    ✓ 抓取 120 条'),
+      elog('ERR','12:04:16  digikey_search ✗ HTTP 403 (node-22)'),
+      elog('INFO','12:04:15  proxy-pool     轮换 datacenter-cn'),
+      elog('OK','12:04:14  guangdong_招标 ✓ 抓取 64 条'),
+      elog('WARN','12:04:12  ccgp_中央政采  list selector 命中 0，告警'),
+      elog('OK','12:04:11  ti_参数搜索    ✓ 抓取 88 条'),
+      elog('INFO','12:04:10  scheduler      注册 6 个定时任务'),
+    ];
+    const alertFeed = [
+      {title:'digikey_search 403 全量',meta:'反爬封禁 · 5分钟前',color:RED},
+      {title:'node-22 离线',meta:'心跳超时 · 8分钟前',color:RED},
+      {title:'ccgp list 命中 0',meta:'疑改版 · 12分钟前',color:RED},
+      {title:'mouser 429 激增',meta:'限流 · 15分钟前',color:AMB},
+      {title:'代理池可用率 62%',meta:'资源预警 · 21分钟前',color:AMB},
+    ];
+
+    // ---- realtime B ----
+    const nodeList=[]; const ndots=[GRN,GRN,AMB,GRN,RED,GRN,AMB,GRN,GRN,AMB,GRN,GRN,RED,GRN];
+    for(let i=0;i<14;i++){ nodeList.push({ name:`node-${String(i+1).padStart(2,'0')}`, dot:ndots[i], load:`${20+((i*37)%75)}%` }); }
+    const kpisB = [{label:'吞吐 req/s',value:'1.24k',color:'#dbe4ee'},{label:'成功率',value:'97.3%',color:GRNt},{label:'活跃任务',value:'342',color:'#dbe4ee'},{label:'告警',value:'5',color:REDt}];
+    const bars=[]; for(let i=0;i<30;i++){ bars.push(`${30+((i*53)%62)}%`); }
+    const runRows = [
+      {name:'ccgp_中央政采',node:'node-07',rate:'18/s',prog:'68%'},{name:'szlcsc_立创',node:'node-03',rate:'120/s',prog:'42%'},
+      {name:'guangdong_招标',node:'node-11',rate:'30/s',prog:'85%'},{name:'findchips_比价',node:'node-05',rate:'88/s',prog:'30%'},
+      {name:'mouser_list',node:'node-19',rate:'64/s',prog:'12%'},{name:'chinabidding',node:'node-02',rate:'40/s',prog:'55%'},
+    ];
+    const signalFeed = [
+      {title:'⚠ digikey 403 全量',meta:'banned · node-22',color:RED},
+      {title:'⚠ ccgp list 命中0',meta:'改版? selector fail',color:RED},
+      {title:'⚠ mouser 429 限流',meta:'count 1.2k / 5m',color:AMB},
+      {title:'✗ node-22 离线',meta:'last seen 8m ago',color:RED},
+      {title:'● IP 池轮换',meta:'datacenter-cn · ok',color:GRN},
+      {title:'✓ szlcsc 恢复',meta:'success 99%',color:GRN},
+    ];
+
+    return {
+      navTop, navBot,
+      isTriage:screen==='triage', isSpiders:screen==='spiders', isDetail:screen==='detail', isRun:screen==='run',
+      isVersions:screen==='versions', isWizard:screen==='wizard', isRules:screen==='rules', isSchedule:screen==='schedule',
+      isAlerts:screen==='alerts', isAuthors:screen==='authors', isRtA:screen==='rtA', isRtB:screen==='rtB',
+      goSpiders:go('spiders'), goWizard:go('wizard'), goRun:go('run'), goVersions:go('versions'), goRules:go('rules'), goRtA:go('rtA'), goRtB:go('rtB'),
+      coreSites, triCards, triCells, triRows, layerLegend,
+      filters, spiderRows,
+      layers, baseBars, recentRuns,
+      runLog, runStats, stages,
+      versions, diffLines,
+      wizSteps, dupRows,
+      fields, hooks,
+      ganttRows, queues, reconcile,
+      alertKpis, ruleRows, statusBars, antiBot,
+      authorKpis, authorRows,
+      nodes, kpis, logLines, alertFeed,
+      nodeList, kpisB, bars, runRows, signalFeed,
+    };
+  }
+}
+</script>
+</body>
+</html>

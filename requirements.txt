@@ -1,0 +1,12 @@
+# SpiderX M0 合并依赖（backend + worker + shared）。后续按服务拆分。
+fastapi>=0.115
+uvicorn[standard]>=0.32
+sqlalchemy[asyncio]>=2.0.36
+asyncpg>=0.30
+psycopg[binary]>=3.2
+alembic>=1.14
+pydantic>=2.9
+pydantic-settings>=2.6
+redis>=5.2
+celery>=5.4
+httpx>=0.28

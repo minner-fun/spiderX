@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:#0a0d12;}
+input{font-family:'Inter',sans-serif;}
+input::placeholder{color:#46505f;}
+@keyframes hfpulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+@keyframes hfblink{0%,100%{opacity:1;}50%{opacity:.25;}}
+@keyframes hfscan{0%{transform:translateY(-30px);opacity:0;}10%{opacity:.6;}90%{opacity:.6;}100%{transform:translateY(380px);opacity:0;}}
+@keyframes hffloat{0%{transform:translateY(0);}50%{transform:translateY(-7px);}100%{transform:translateY(0);}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;font-family:'Inter',sans-serif;color:#e8eef6;background:radial-gradient(1100px 560px at 78% -10%, #17222f 0%, rgba(23,34,47,0) 60%), radial-gradient(900px 600px at -5% 105%, #14202b 0%, rgba(20,32,43,0) 55%), #0a0d12;">
+
+  <!-- LEFT — brand / live console panel -->
+  <div style="flex:1.15;position:relative;overflow:hidden;border-right:1px solid #161d27;display:flex;flex-direction:column;padding:46px 52px;background-image:linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px);background-size:48px 48px;">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,#4cc9e006,transparent 30%);pointer-events:none;"></div>
+
+    <!-- brand -->
+    <div style="display:flex;align-items:center;gap:12px;position:relative;">
+      <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#4cc9e0,#2a7d8c);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px #4cc9e055;">
+        <div style="width:15px;height:15px;border:2px solid #06090d;border-radius:3px;transform:rotate(45deg);"></div>
+      </div>
+      <div style="line-height:1;"><div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;letter-spacing:.5px;">ARACHNE</div><div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5b6675;letter-spacing:2.5px;margin-top:3px;">CRAWL CONTROL</div></div>
+    </div>
+
+    <!-- headline -->
+    <div style="margin-top:auto;position:relative;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4cc9e0;letter-spacing:2px;margin-bottom:14px;">// 分布式爬虫指挥中心</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:38px;font-weight:600;line-height:1.25;letter-spacing:-.5px;max-width:520px;">2,000 个爬虫，<br>一眼看清谁<span style="color:#ff8473;">挂了</span>、谁<span style="color:#f5c266;">没数据</span>。</div>
+      <div style="font-size:14px;color:#7c8696;margin-top:16px;max-width:440px;line-height:1.7;">巡检分诊 · 分层健康信号 · 版本回滚 · 反爬检测 — 工程师的控制台。</div>
+    </div>
+
+    <!-- live mini console -->
+    <div style="margin-top:34px;border:1px solid #1c2431;border-radius:13px;background:#0b0f17cc;backdrop-filter:blur(4px);overflow:hidden;position:relative;max-width:540px;">
+      <div style="position:absolute;left:0;right:0;top:0;height:24px;background:linear-gradient(180deg,#4cc9e022,transparent);animation:hfscan 5s linear infinite;pointer-events:none;"></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #161d27;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#56d68a;box-shadow:0 0 8px #56d68a;animation:hfpulse 1.6s infinite;"></span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6fdf9c;">巡检 12:00 LIVE</span>
+        <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:#5b6675;">2,000 站 · 每小时一轮</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#161d27;">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="3">
+          <div style="background:#0d121a;padding:13px 15px;">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.dot }};box-shadow:0 0 7px {{ s.dot }};"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#7c8696;">{{ s.label }}</span></div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;color:{{ s.color }};margin-top:5px;">{{ s.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding:11px 14px;font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.95;">
+        <sc-for list="{{ logLines }}" as="l" hint-placeholder-count="4"><div style="{{ l.style }}">{{ l.txt }}</div></sc-for>
+      </div>
+    </div>
+
+    <div style="margin-top:26px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#3a4452;position:relative;">© 2026 Arachne Platform · 内部系统 · v3.0</div>
+  </div>
+
+  <!-- RIGHT — auth form -->
+  <div style="width:480px;flex:none;display:flex;flex-direction:column;justify-content:center;padding:48px 56px;">
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:25px;font-weight:600;letter-spacing:.2px;">登录控制台</div>
+    <div style="font-size:13px;color:#5b6675;margin-top:7px;">使用工程账号或 SSO 接入</div>
+
+    <!-- SSO -->
+    <div style="display:flex;gap:10px;margin-top:26px;">
+      <sc-for list="{{ ssoBtns }}" as="b" hint-placeholder-count="2">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #28323f;border-radius:10px;background:#10151e;padding:11px;font-size:12.5px;color:#cdd6e2;cursor:pointer;" style-hover="border-color:#4cc9e055;background:#121a24"><span style="font-size:14px;">{{ b.icon }}</span>{{ b.label }}</div>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin:24px 0;"><span style="flex:1;height:1px;background:#1c2431;"></span><span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#46505f;">或账号密码</span><span style="flex:1;height:1px;background:#1c2431;"></span></div>
+
+    <!-- fields -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#7c8696;letter-spacing:.5px;margin-bottom:8px;">账号 / 邮箱</div>
+        <div style="display:flex;align-items:center;gap:10px;border:1px solid #2a3340;border-radius:10px;background:#0d121a;padding:0 13px;" style-focus-within="border-color:#4cc9e0">
+          <span style="color:#46505f;font-size:13px;">◍</span>
+          <input value="ops@team.io" style="flex:1;border:none;outline:none;background:transparent;color:#e8eef6;font-size:13.5px;padding:12px 0;font-family:'JetBrains Mono',monospace;" />
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;margin-bottom:8px;"><span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#7c8696;letter-spacing:.5px;">密码</span><span style="margin-left:auto;font-size:11px;color:#4cc9e0;cursor:pointer;">忘记密码？</span></div>
+        <div style="display:flex;align-items:center;gap:10px;border:1px solid #2a3340;border-radius:10px;background:#0d121a;padding:0 13px;">
+          <span style="color:#46505f;font-size:13px;">⚿</span>
+          <input type="{{ pwType }}" value="crawl-control-2026" style="flex:1;border:none;outline:none;background:transparent;color:#e8eef6;font-size:13.5px;padding:12px 0;font-family:'JetBrains Mono',monospace;letter-spacing:1px;" />
+          <span onClick="{{ togglePw }}" style="font-size:12px;color:#7c8696;cursor:pointer;font-family:'JetBrains Mono',monospace;">{{ pwToggleLabel }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- options -->
+    <div style="display:flex;align-items:center;gap:9px;margin-top:18px;cursor:pointer;" onClick="{{ toggleRemember }}">
+      <span style="{{ rememberBox }}">{{ rememberMark }}</span>
+      <span style="font-size:12.5px;color:#aeb9c7;">保持登录 7 天</span>
+      <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#5b6675;">env: <span style="color:#f5c266;">prod</span></span>
+    </div>
+
+    <!-- submit -->
+    <div style="margin-top:24px;display:flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(135deg,#4cc9e0,#37a8bd);color:#06181c;font-weight:600;font-size:14px;border-radius:11px;padding:14px;cursor:pointer;box-shadow:0 0 24px #4cc9e033;" style-hover="box-shadow:0 0 32px #4cc9e055">
+      进入控制台 <span style="font-family:'JetBrains Mono',monospace;">→</span>
+    </div>
+
+    <!-- 2fa hint -->
+    <div style="margin-top:16px;display:flex;align-items:center;gap:9px;border:1px solid #1c2431;border-radius:10px;background:#0c1118;padding:11px 13px;">
+      <span style="width:7px;height:7px;border-radius:50%;background:#56d68a;box-shadow:0 0 7px #56d68a;flex:none;"></span>
+      <span style="font-size:11.5px;color:#7c8696;line-height:1.5;">已启用 2FA — 登录后需输入 Authenticator 动态码。</span>
+    </div>
+
+    <div style="margin-top:auto;padding-top:34px;font-size:11.5px;color:#5b6675;text-align:center;">无账号？联系平台管理员 <span style="color:#7c8696;font-family:'JetBrains Mono',monospace;">@ops-admin</span> 开通</div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:820}}">
+class Component extends DCLogic {
+  state = { showPw: false, remember: true };
+  renderVals() {
+    const RED='#ff6f59', AMB='#f5b84d', GRN='#56d68a';
+    const REDt='#ff8473', AMBt='#f5c266', GRNt='#6fdf9c';
+
+    const stats = [
+      {label:'结构故障',value:'23',dot:RED,color:REDt},
+      {label:'数据干涸',value:'41',dot:AMB,color:AMBt},
+      {label:'健康',value:'1,936',dot:GRN,color:GRNt},
+    ];
+    const lg=(lvl,txt)=>{ const c={INFO:'#8b97a8',OK:GRNt,WARN:AMBt,ERR:REDt}[lvl]; return { txt, style:`color:${c};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;` }; };
+    const logLines = [
+      lg('OK','12:04:21  ccgp_中央政采  ✓ 抓取 48 条'),
+      lg('ERR','12:04:16  digikey_search ✗ HTTP 403'),
+      lg('WARN','12:04:12  ccgp list selector 命中 0，告警'),
+      lg('OK','12:04:11  szlcsc_立创    ✓ 抓取 120 条'),
+    ];
+
+    const ssoBtns = [
+      {icon:'⧉', label:'飞书 SSO'},
+      {icon:'◆', label:'企业微信'},
+    ];
+
+    const remOn="width:16px;height:16px;border-radius:5px;background:#16222a;border:1px solid #4cc9e055;color:#4cc9e0;display:flex;align-items:center;justify-content:center;font-size:10px;flex:none;box-shadow:0 0 8px #4cc9e022;";
+    const remOff="width:16px;height:16px;border-radius:5px;background:#0d121a;border:1px solid #2c3645;color:transparent;display:flex;align-items:center;justify-content:center;font-size:10px;flex:none;";
+
+    return {
+      stats, logLines, ssoBtns,
+      pwType: this.state.showPw ? 'text' : 'password',
+      pwToggleLabel: this.state.showPw ? '隐藏' : '显示',
+      togglePw: () => this.setState(s => ({ showPw: !s.showPw })),
+      rememberBox: this.state.remember ? remOn : remOff,
+      rememberMark: this.state.remember ? '✓' : '',
+      toggleRemember: () => this.setState(s => ({ remember: !s.remember })),
+    };
+  }
+}
+</script>
+</body>
+</html>

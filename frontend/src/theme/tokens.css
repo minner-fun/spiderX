@@ -1,0 +1,21 @@
+/* 深色控制台主题 token（M0 雏形，M4 对齐高保真） */
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --panel-2: #1d212a;
+  --border: #2a2f3a;
+  --text: #d6dae2;
+  --muted: #8b93a1;
+  --accent: #c97b3c;
+  --green: #5f8a5f;
+  --yellow: #d6a24e;
+  --red: #cf6b52;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+a { color: inherit; text-decoration: none; }
