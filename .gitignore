@@ -12,3 +12,13 @@ dist/
 .vscode/
 frontend/.vite/
 *.zip
+
+# 本机专用 compose 覆盖
+docker-compose.override.yml
+
+# celery beat 本地调度产物
+celerybeat-schedule
+celerybeat-schedule.*
+
+# Claude Code 本地会话目录
+.claude/
