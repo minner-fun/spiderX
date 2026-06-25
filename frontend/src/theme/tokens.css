@@ -1,21 +1,95 @@
-/* 深色控制台主题 token（M0 雏形，M4 对齐高保真） */
+/* ============================================================
+   SpiderX 深色控制台主题 — 唯一事实来源
+   精确值来自 design_handoff_hifi/README.md（高保真定稿）。
+   组件一律引用这里的 CSS 变量，禁止散落硬编码 hex。
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
 :root {
-  --bg: #0f1115;
-  --panel: #171a21;
-  --panel-2: #1d212a;
-  --border: #2a2f3a;
-  --text: #d6dae2;
-  --muted: #8b93a1;
-  --accent: #c97b3c;
-  --green: #5f8a5f;
-  --yellow: #d6a24e;
-  --red: #cf6b52;
-  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* —— 背景层次（越靠上越"浮"）—— */
+  --bg-page: #0a0d12;
+  --bg-sidebar-1: #0e131c;
+  --bg-sidebar-2: #0b0f17;
+  --bg-topbar: #0c1118;          /* 配 backdrop-filter: blur(6px) + 90% 透明 */
+  --bg-panel: #0f141d;
+  --bg-inset: #121823;           /* 内嵌卡 / 行 hover */
+  --bg-input: #0d121a;
+  --bg-terminal: #080b10;        /* 终端/日志底 */
+  --bg-chip: #10151e;
+
+  /* —— 描边（自上而下变淡）—— */
+  --bd-accent: #2a3340;
+  --bd-control: #28323f;
+  --bd-card: #222b38;
+  --bd-panel: #1f2734;
+  --bd-divider: #1c2431;
+  --bd-divider-weak: #161d27;
+  --bd-row: #141a23;
+
+  /* —— 品牌强调 · 磷光青（仅交互/选中/品牌，绝不与健康色混用）—— */
+  --accent: #4cc9e0;
+  --accent-grad: linear-gradient(135deg, #4cc9e0, #37a8bd);
+  --accent-deep: #2a7d8c;
+  --accent-on: #06181c;          /* 青底上的文字 */
+  --accent-glow: 0 0 24px #4cc9e033;
+  --accent-glow-hover: 0 0 32px #4cc9e055;
+  --accent-select-bg: linear-gradient(90deg, #4cc9e018, transparent);
+
+  /* —— 健康三态（数据语义，严格守恒）—— */
+  --red-dot: #ff6f59;   --red-text: #ff8473;   --red-bg: #1a1110;  --red-bd: #4a241d;
+  --yellow-dot: #f5b84d; --yellow-text: #f5c266; --yellow-bg: #16140a; --yellow-bd: #3a2e16;
+  --green-dot: #56d68a;  --green-text: #6fdf9c;  --green-bg: #0f1a14; --green-bd: #1d3326;
+  --unknown-dot: #94a3b8; --unknown-text: #94a3b8; --unknown-bg: #141a23; --unknown-bd: #28323f;
+
+  /* —— 文本色阶 —— */
+  --tx-1: #e8eef6;  --tx-strong: #dbe4ee;  --tx-2: #cdd6e2;  --tx-3: #aeb9c7;
+  --tx-4: #94a3b8;  --tx-5: #8b97a8;        --tx-muted: #7c8696;
+  --tx-weak: #5b6675; --tx-weaker: #46505f; --tx-ts: #3a4452;  /* 时间戳 */
+
+  /* —— 字体 —— */
+  --font-head: 'Space Grotesk', sans-serif;   /* 标题/品牌/大数字 weight600, big: letter-spacing -.5px */
+  --font-mono: 'JetBrains Mono', monospace;   /* 指标/ID/cron/日志/diff/域名/标签 */
+  --font-body: 'Inter', sans-serif;           /* 正文/说明/按钮 */
+
+  /* —— 圆角 —— */
+  --r-control: 8px; --r-card: 10px; --r-panel: 13px; --r-badge: 7px; --r-pill: 20px;
+
+  /* —— 布局 —— */
+  --content-max: 1480px; --sidebar-w: 218px; --topbar-h: 54px; --login-right-w: 480px;
 }
+
+/* —— 背景纹理（页面/登录左栏可用）—— */
+.hf-grid {
+  background-image: linear-gradient(#ffffff05 1px, transparent 1px),
+                    linear-gradient(90deg, #ffffff05 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.hf-corner-glow {
+  background: radial-gradient(1100px 560px at 82% -12%, #17222f, transparent 62%),
+              radial-gradient(900px 500px at 0% 110%, #131a26, transparent 55%);
+}
+
+/* —— 状态灯（通用）：用 currentColor + 具体色 —— */
+.hf-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.hf-dot.live { animation: hfpulse 1.5s infinite; }
+
+/* —— keyframes（与高保真稿一致）—— */
+@keyframes hfpulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+@keyframes hfblink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+@keyframes hfscan { 0% { transform: translateY(-30px); opacity: 0; } 10% { opacity: .6; } 90% { opacity: .6; } 100% { transform: translateY(380px); opacity: 0; } }
+@keyframes hfsweep { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* —— 全局 base —— */
 * { box-sizing: border-box; }
 html, body, #app { margin: 0; height: 100%; }
 body {
-  background: var(--bg); color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+  background: var(--bg-page);
+  color: var(--tx-1);
+  font-family: var(--font-body);
+  font-size: 13px;
 }
 a { color: inherit; text-decoration: none; }
+.mono { font-family: var(--font-mono); }
+.num  { font-family: var(--font-head); font-variant-numeric: tabular-nums; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--bd-card); border-radius: 4px; }

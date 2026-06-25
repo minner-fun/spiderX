@@ -97,4 +97,6 @@ VITE_API_TARGET=http://<后端地址>:8000 npm run dev   # 打开 localhost:5173
 - `docs/SpiderX设计纲要-v1.md` — 完整架构（13 节）
 - `docs/M0实施清单.md` — M0~M4 里程碑 + M0 细节
 - `docs/项目背景与设计沉淀.md` — 6 个旧项目复盘 + 所有设计决策的来龙去脉
+- `docs/M1前端落地要点.md` — 高保真落地：M1 范围/组件清单/构建顺序/后端契约
 - `docs/STATUS.md` — 当前进度、已验证内容、下一步
+- 视觉令牌权威源：`design_handoff_hifi/README.md` + `frontend/src/theme/tokens.css`

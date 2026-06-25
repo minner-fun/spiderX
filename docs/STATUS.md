@@ -48,7 +48,11 @@
 
 ## 下一步：M1
 
-1. 先看 `design_handoff_hifi/`（高保真 + 登录页），让 M1 前端对齐最终视觉。
-2. 后端：Project/Spider/Version 完整 CRUD + 分页/筛选；爬虫详情聚合（健康占位/版本/负责人）。
-3. 前端：登录页 + 爬虫列表页（执行态/健康态双列、负责人列）+ 爬虫详情页骨架。
-4. 完成后更新本文件 + commit/push。
+详细落地见 **`docs/M1前端落地要点.md`**（已读完高保真，沉淀了 token + 组件清单 + 构建顺序 + 后端契约）。
+`frontend/src/theme/tokens.css` 已按高保真精确令牌实装（深色控制台 + 三套字体 + 健康三态色 + keyframes）。
+
+M1 范围：登录页 + App Shell + 爬虫列表 + 爬虫详情 + 版本管理（巡检/规则/调度/作者等屏 M2~M4）。
+- 后端补：`GET /api/spiders/:id`、`PATCH`、`/versions`、`/versions/diff`、`/rollback`、`/runs`、列表筛选分页。
+- 前端：先 theme+原子组件(StatusDot/HealthBadge/ExecBadge/Panel/KpiCard/CtaButton/Pill) → AppShell → Login → Spiders → Detail → Versions。
+- 健康/四层信号 M1 用占位/unknown 渲染（真实引擎 M2/M3 才产出），但组件按真实契约写。
+完成后更新本文件 + commit/push。
