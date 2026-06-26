@@ -1,7 +1,13 @@
 <script setup lang="ts">
 // 数据量基线趋势柱图（ECharts，深色主题）。末柱断崖时红 + 辉光。
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import * as echarts from 'echarts'
+// 按需引入，避免全量 echarts 进 bundle
+import * as echarts from 'echarts/core'
+import { BarChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+
+echarts.use([BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const props = defineProps<{
   labels: string[]
