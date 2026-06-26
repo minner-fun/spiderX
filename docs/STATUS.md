@@ -2,7 +2,7 @@
 
 > 给后续会话/另一台开发机：当前到哪了、什么已验证、下一步做什么。每个里程碑完成后更新本文件。
 
-最后更新：2026-06-26（M1 完成）
+最后更新：2026-06-26（M2 完成）
 
 ---
 
@@ -12,8 +12,9 @@
 |---|---|---|---|
 | **M0** | 骨架 + 基础设施 | ✅ 完成并验证 | 三端跑通互通；主链路全绿 |
 | **M1** | 数据模型 + 核心 CRUD | ✅ 完成并验证 | 登录 + 外壳 + 列表/详情/版本 5 屏对齐高保真；后端接口 + 多域 seed |
-| M2 | 规则编辑器 + 试运行 | ⏳ 下一步 | URL+规则→async引擎抓首页→字段JSON+四层信号 |
-| M3 | 调度 + 执行 + 落库 | 未开始 | Beat(抖动)→worker执行→幂等入库；Run状态机+signals |
+| **M2** | 规则编辑器 + 试运行 | ✅ 完成并验证 | 配置驱动 async 引擎抓首页→字段JSON+**真实四层信号**；三栏编辑器(点选高亮) |
+| M2.5 | 新建查重向导 | 未开始 | 7 步向导 + domain/url_pattern/字段重合度撞库拦截（从 M2 拆出）|
+| M3 | 调度 + 执行 + 落库 | ⏳ 下一步 | Beat(抖动)→worker执行→幂等入库；Run状态机+signals+双去重闸门 |
 | M4 | 实时 + 分诊看板 | 未开始 | worker→Redis→WS→深色分诊看板看真实健康三态 |
 
 ---
@@ -75,6 +76,32 @@
 
 ---
 
-## 下一步：M2（规则编辑器 + 试运行）
+## M2 已完成内容（已 commit GitHub main，2026-06-26）
 
-URL + 规则 → 轻量 async 引擎(httpx) 抓首页 → 字段 JSON + 真实四层信号；含新建查重向导。详见 `docs/SpiderX设计纲要-v1.md` §3/§7。完成后更新本文件 + commit/push。
+**第一次产出真实四层信号**——配置驱动 async 引擎从 URL+规则抓首页、抽字段、报信号。
+
+**后端引擎**（`worker/engine/core.py`，backend 与 worker 共用）：
+- `fetch`(httpx async) → URL 正则 `route` 到 processor → `parse_list`(parsel CSS) → `apply_transform`(text/int/money 万元→元/date 归一/area)。
+- 真实四层信号：L1 `http_status` / L2 `list_rows`(命中行数) / L3 `field_fill_rate`(字段抽到率)；L4 `dedup_new` 试运行=null（真实去重在 M3 执行落库时产出）。
+- `backend/app/fixtures.py`：仿真招投标/IC 列表页 HTML（离线确定性验证）+ 匹配的默认规则模板；seed 规则已对齐 fixture，seeded 爬虫规则可直接试运行。
+- 接口（`backend/app/api/engine.py`）：`GET /api/fixtures/:name`、`GET /api/engine/default-rules`、`POST /api/engine/fetch-page`(预览取页)、`POST /api/engine/dry-run`(试运行)。
+- 规则存取（`api/spiders.py`）：`GET /api/spiders/:id/rules`(加载线上配置)、`POST /api/spiders/:id/rules`(保存=生成新版本，配置即版本)。
+
+**前端规则编辑器**（`views/Rules.vue`，三栏）：
+- 顶部 URL 栏 + 可视化/代码模式切换 + ▶试运行 + 保存并试运行。
+- **页面预览**：`fetch-page` 取 HTML → iframe `srcdoc`(sandbox=allow-scripts) 注入 picker：hover 高亮 + click→计算 leaf selector→`postMessage` 回填。
+- **字段映射**：name/type/selector/attr 增删 + 逐字段「拾取」。
+- **抓取配置**：增量字段/水位窗口/代码钩子 + 重置默认模板。
+- **试运行结果**：复用 `utils/health.ts` 四层信号判定 + 抽取记录样本 JSON。
+
+**验证**：`vue-tsc` + 生产 `npm run build` 通过；puppeteer 端到端(点选拾取 row→`div.notice-item`、试运行 L1/L2/L3 真信号、保存 v3→v4)；引擎 curl 异常态(错误 selector→list_rows 0 结构故障 / 缺字段→fill 0.5)；chrome 截图核对三栏。
+
+> 注：fetch-page/dry-run 是服务端抓取（规避浏览器 CORS），属内部工具，存在 SSRF 面，仅限内网；已限制 http/https。
+
+---
+
+## 下一步：M3（调度 + 执行 + 落库）｜M2.5（新建查重向导）
+
+- **M3**：Celery Beat(抖动防惊群) → worker 调 `engine.core` 真实执行 → 统一 Sink 幂等 upsert + **双去重闸门**(入队/已采，带 TTL) → Run 状态机 + 真实 L4 `dedup_new`/`watermark_hit`。对账器扫「已分发未完成」。
+- **M2.5**（从 M2 拆出）：新建爬虫 7 步向导 + 查重（domain/url_pattern/字段重合度撞库拦截）。
+- 详见 `docs/SpiderX设计纲要-v1.md` §6/§7/§10。完成后更新本文件 + commit/push。
