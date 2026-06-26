@@ -10,3 +10,4 @@ pydantic-settings>=2.6
 redis>=5.2
 celery>=5.4
 httpx>=0.28
+parsel>=1.9          # 配置驱动引擎：CSS/XPath 抽取（lxml 系）

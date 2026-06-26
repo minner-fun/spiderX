@@ -14,6 +14,7 @@ from shared.enums import RunExecStatus
 from backend.app.schemas import (
     SpiderCreate, SpiderOut, SpiderPatch, SpiderListItem, SpiderListOut,
     SpiderDetailOut, VersionOut, RunOut, DiffOut, DiffLine, RollbackIn,
+    RulesOut, RulesSaveIn,
 )
 from backend.app.core.celery_client import celery_producer
 
@@ -237,6 +238,62 @@ async def diff_versions(
             lines.append(DiffLine(op="ctx", text=text))
         # "? " 提示行跳过
     return DiffOut(from_=from_, to=to, lines=lines)
+
+
+@router.get("/spiders/{spider_id}/rules", response_model=RulesOut)
+async def get_rules(spider_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
+    """编辑器加载当前线上版本的完整配置（无线上版本则返回空规则）。"""
+    v = await session.scalar(
+        select(SpiderVersion).where(
+            SpiderVersion.spider_id == spider_id, SpiderVersion.is_live.is_(True)
+        )
+    )
+    if not v:
+        v = await session.scalar(
+            select(SpiderVersion).where(SpiderVersion.spider_id == spider_id)
+            .order_by(SpiderVersion.version.desc()).limit(1)
+        )
+    if not v:
+        return RulesOut(version=None, rules={}, incremental={}, hooks=[])
+    return RulesOut(version=v.version, rules=v.rules or {},
+                    incremental=v.incremental or {}, hooks=v.hooks or [])
+
+
+@router.post("/spiders/{spider_id}/rules", response_model=VersionOut, status_code=201)
+async def save_rules(
+    spider_id: uuid.UUID, body: RulesSaveIn, session: AsyncSession = Depends(get_session)
+):
+    """保存并试运行：生成新版本并置为线上（配置即版本，禁止复制文件）。"""
+    spider = await session.get(Spider, spider_id)
+    if not spider:
+        raise HTTPException(404, "spider not found")
+    max_v = await session.scalar(
+        select(func.max(SpiderVersion.version)).where(SpiderVersion.spider_id == spider_id)
+    )
+    for v in (await session.scalars(
+        select(SpiderVersion).where(
+            SpiderVersion.spider_id == spider_id, SpiderVersion.is_live.is_(True)
+        )
+    )).all():
+        v.is_live = False
+
+    new_ver = SpiderVersion(
+        spider_id=spider_id, version=(max_v or 0) + 1,
+        rules=body.rules, incremental=body.incremental, hooks=body.hooks,
+        is_live=True, author_id=spider.owner_id,
+        change_msg=body.change_msg or f"v{(max_v or 0) + 1} 规则编辑器保存",
+    )
+    session.add(new_ver)
+    await session.flush()
+    spider.current_version_id = new_ver.id
+    await session.commit()
+    await session.refresh(new_ver)
+    author = await session.scalar(select(User.name).where(User.id == new_ver.author_id))
+    return VersionOut(
+        id=new_ver.id, spider_id=new_ver.spider_id, version=new_ver.version,
+        is_live=new_ver.is_live, author_name=author, change_msg=new_ver.change_msg,
+        created_at=new_ver.created_at,
+    )
 
 
 @router.post("/spiders/{spider_id}/rollback", response_model=VersionOut, status_code=201)

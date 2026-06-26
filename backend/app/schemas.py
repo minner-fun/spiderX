@@ -134,3 +134,19 @@ class DiffOut(BaseModel):
 
 class RollbackIn(BaseModel):
     version: int
+
+
+class RulesOut(BaseModel):
+    """编辑器加载：当前线上版本的完整配置。"""
+    version: int | None = None
+    rules: dict
+    incremental: dict
+    hooks: list
+
+
+class RulesSaveIn(BaseModel):
+    """保存并试运行：生成新版本。"""
+    rules: dict
+    incremental: dict = {}
+    hooks: list = []
+    change_msg: str = ""
