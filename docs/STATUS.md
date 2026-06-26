@@ -2,7 +2,7 @@
 
 > 给后续会话/另一台开发机：当前到哪了、什么已验证、下一步做什么。每个里程碑完成后更新本文件。
 
-最后更新：2026-06-25（M0 完成）
+最后更新：2026-06-26（M1 完成）
 
 ---
 
@@ -11,8 +11,8 @@
 | # | 里程碑 | 状态 | 验收标准 |
 |---|---|---|---|
 | **M0** | 骨架 + 基础设施 | ✅ 完成并验证 | 三端跑通互通；主链路全绿 |
-| M1 | 数据模型 + 核心 CRUD | ⏳ 下一步 | 能建爬虫、查列表、看详情；前端对齐高保真+登录页 |
-| M2 | 规则编辑器 + 试运行 | 未开始 | URL+规则→async引擎抓首页→字段JSON+四层信号 |
+| **M1** | 数据模型 + 核心 CRUD | ✅ 完成并验证 | 登录 + 外壳 + 列表/详情/版本 5 屏对齐高保真；后端接口 + 多域 seed |
+| M2 | 规则编辑器 + 试运行 | ⏳ 下一步 | URL+规则→async引擎抓首页→字段JSON+四层信号 |
 | M3 | 调度 + 执行 + 落库 | 未开始 | Beat(抖动)→worker执行→幂等入库；Run状态机+signals |
 | M4 | 实时 + 分诊看板 | 未开始 | worker→Redis→WS→深色分诊看板看真实健康三态 |
 
@@ -53,13 +53,28 @@
 
 ---
 
-## 下一步：M1
+## M1 已完成内容（已 commit GitHub main，2026-06-26）
 
-详细落地见 **`docs/M1前端落地要点.md`**（已读完高保真，沉淀了 token + 组件清单 + 构建顺序 + 后端契约）。
-`frontend/src/theme/tokens.css` 已按高保真精确令牌实装（深色控制台 + 三套字体 + 健康三态色 + keyframes）。
+落地 5 屏 + 外壳，对齐 `design_handoff_hifi/` 高保真，深色控制台「Mission Control」。
 
-M1 范围：登录页 + App Shell + 爬虫列表 + 爬虫详情 + 版本管理（巡检/规则/调度/作者等屏 M2~M4）。
-- 后端补：`GET /api/spiders/:id`、`PATCH`、`/versions`、`/versions/diff`、`/rollback`、`/runs`、列表筛选分页。
-- 前端：先 theme+原子组件(StatusDot/HealthBadge/ExecBadge/Panel/KpiCard/CtaButton/Pill) → AppShell → Login → Spiders → Detail → Versions。
-- 健康/四层信号 M1 用占位/unknown 渲染（真实引擎 M2/M3 才产出），但组件按真实契约写。
-完成后更新本文件 + commit/push。
+**前端**（`frontend/src/`）：
+- 原子组件 `components/`：StatusDot / HealthBadge / ExecBadge / Panel / KpiCard / Pill / CtaButton / BaselineBars(ECharts)，全部引用 `theme/tokens.css` 变量。`views/Styleguide.vue` 像素校验页。
+- 外壳 `layouts/AppShell.vue`：侧栏(品牌 + 监控/管理双组 + 计数徽章 + 值班用户) + 顶栏(项目切换/env/⌘K/巡检/告警)。`nav.ts` 导航模型 + 路由归属高亮。
+- `views/Login.vue` 假登录（左品牌实时 mini 控制台 + 右表单）；`router/` 嵌套路由 + `beforeEach` auth guard；`stores/` auth(token) + session(项目/env)。
+- `views/Spiders.vue` 列表（左筛选 + 主表 + **成功率≠健康** 叙事黄条）；`views/SpiderDetail.vue`（头部卡 + **四层健康信号表** + 数据基线柱图 + 右栏元信息/最近运行）；`views/Versions.vue`（历史 + diff + ↶回滚）。
+- `utils/health.ts` 四层信号判定（①②③异常=🔴；正常且④=0=🟡；④>0=🟢；null=⚪）。
+
+**后端**（`backend/app/`）：
+- `api/spiders.py`：列表(status/health/owner/domain/q + 分页)、详情(含最近 Run 四层信号)、PATCH、versions、versions/diff(ndiff)、rollback(=新版本不复制文件)、runs。`schemas.py` 对应出入参。
+- `seed.py` 幂等 demo：2 项目(招投标 prod / IC staging) × 9 爬虫，覆盖 🔴🟡🟢⚪ 四态 + 版本链 + 10 次运行(末次断崖) + 调度。
+
+**验证**：`vue-tsc` 全过 + 生产 `npm run build` 通过；puppeteer 端到端登录流程(未登录→guard 跳 /login→提交→落 /spiders)；接口 curl 全绿(列表/筛选/详情/diff/rollback/patch)；chrome 截图逐屏像素核对。
+
+> 健康/四层信号 M1 由 seed 提供真实结构数据（真实引擎 M2/M3 接入），组件按真实契约写，M3 接上即可。
+> 未实装屏(巡检/规则/调度/作者/实时)走 `Placeholder.vue` 占位并标里程碑。
+
+---
+
+## 下一步：M2（规则编辑器 + 试运行）
+
+URL + 规则 → 轻量 async 引擎(httpx) 抓首页 → 字段 JSON + 真实四层信号；含新建查重向导。详见 `docs/SpiderX设计纲要-v1.md` §3/§7。完成后更新本文件 + commit/push。

@@ -54,7 +54,9 @@ SpiderX = 这三者的交集。
 
 **M0 已完成并验证（见 `docs/STATUS.md`）**：monorepo 骨架 + docker-compose + 7 表 + alembic + 三端跑通。终验主链路全绿：建 Spider → 入 PG → 触发 run → worker 写 Run(四层信号) → Redis pub-sub → WS 转发。
 
-**里程碑**：M0 地基✅ → M1 数据模型+CRUD+列表/详情 → M2 规则编辑器+试运行 → M3 调度+执行+落库 → M4 实时+分诊看板。**下一步：M1。** M1 前端要对齐 `design_handoff_hifi/` 高保真 + 登录页。
+**M1 已完成并验证**：登录 + App Shell + 爬虫列表/详情/版本 5 屏对齐 `design_handoff_hifi/` 高保真；后端补齐爬虫接口(列表筛选分页/详情/PATCH/版本/diff/回滚/运行) + 多域多健康态 demo seed。四层信号判定、「成功率≠健康」叙事、版本 diff/回滚均落地。
+
+**里程碑**：M0 地基✅ → M1 数据模型+CRUD+列表/详情/版本✅ → M2 规则编辑器+试运行 → M3 调度+执行+落库 → M4 实时+分诊看板。**下一步：M2。**
 
 ---
 
