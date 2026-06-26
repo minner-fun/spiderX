@@ -356,8 +356,9 @@ async def list_runs(
 
 @router.post("/spiders/{spider_id}/run", status_code=202)
 async def trigger_run(spider_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
+    """手动触发真实执行（M3）：worker 抓首页→解析→落库→真实四层信号→更新健康。"""
     spider = await session.get(Spider, spider_id)
     if not spider:
         raise HTTPException(404, "spider not found")
-    celery_producer.send_task("worker.ping_run", args=[str(spider_id)])
+    celery_producer.send_task("worker.run_spider", args=[str(spider_id)], kwargs={"trigger": "manual"})
     return {"queued": True, "spider_id": str(spider_id)}

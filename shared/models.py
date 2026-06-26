@@ -6,6 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     String, Integer, Boolean, Float, ForeignKey, DateTime, func, text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -98,6 +99,20 @@ class Schedule(Base):
     jitter_sec: Mapped[int] = mapped_column(Integer, default=0)  # 下发抖动防惊群
     next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CrawledRecord(Base):
+    """业务落库（M3）：抓取产出经统一 Sink 幂等 upsert 到此。
+    (spider_id, dedup_key) 唯一 = 已采去重闸门；新插入条数 = 真实 dedup_new。
+    MVP 默认 PG（业务数据与元数据同库不同表），可插拔 mysql/kafka（sink.target）。"""
+    __tablename__ = "crawled_records"
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    spider_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("spiders.id", ondelete="CASCADE"), index=True)
+    dedup_key: Mapped[str] = mapped_column(String(256), index=True)
+    data: Mapped[dict] = mapped_column(JSONB, default=dict)
+    run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (UniqueConstraint("spider_id", "dedup_key", name="uq_crawled_spider_key"),)
 
 
 class DedupRegistry(Base):
