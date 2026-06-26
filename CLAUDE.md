@@ -56,9 +56,11 @@ SpiderX = 这三者的交集。
 
 **M1 已完成并验证**：登录 + App Shell + 爬虫列表/详情/版本 5 屏对齐 `design_handoff_hifi/` 高保真；后端补齐爬虫接口(列表筛选分页/详情/PATCH/版本/diff/回滚/运行) + 多域多健康态 demo seed。四层信号判定、「成功率≠健康」叙事、版本 diff/回滚均落地。
 
-**M2 已完成并验证**：配置驱动 async 引擎(`worker/engine/core.py`：httpx+parsel，URL 路由+transform)**首次产出真实四层信号**；本地 fixture 仿真页 + 试运行/取页接口；三栏规则编辑器(页面预览点选高亮→生成 selector / 字段映射 / 抓取配置)，保存=生成新版本。L4 dedup_new 试运行=null（真实去重在 M3）。
+**M2 已完成并验证**：配置驱动 async 引擎(`worker/engine/core.py`：httpx+parsel，URL 路由+transform)**首次产出真实四层信号**；本地 fixture 仿真页 + 试运行/取页接口；三栏规则编辑器(页面预览点选高亮→生成 selector / 字段映射 / 抓取配置)，保存=生成新版本。
 
-**里程碑**：M0✅ → M1 列表/详情/版本✅ → M2 规则编辑器+试运行✅ → M3 调度+执行+落库(双去重闸门) → M4 实时+分诊看板。**下一步：M3**（M2.5 新建查重向导从 M2 拆出，可穿插）。
+**M3 已完成并验证**：真实执行闭环 —— `run_spider` 引擎抓取→**统一 Sink 幂等 upsert(`crawled_records`)→真实 L4 `dedup_new`**→`shared/health.py` 更新 health_status→推 triage；**双去重闸门**区分「出数据🟢 vs 真没数据🟡」。Celery Beat(`dispatch_due` croniter+抖动 / `reconcile` 扫已分发未完成) + 调度·对账屏(gantt+队列水位+对账)。seed 改规则一致(broken🔴/blocked🔴/dry🟡/ok🟢/code⚪)，健康由引擎实测。
+
+**里程碑**：M0✅ → M1✅ → M2✅ → M3 调度+执行+落库✅ → M4 实时+分诊看板。**下一步：M4**（M2.5 新建查重向导从 M2 拆出，可穿插）。
 
 ---
 

@@ -47,9 +47,14 @@ async function load() {
   } catch (e) { error.value = String(e) } finally { loading.value = false }
 }
 async function runOnce() {
+  // 真实执行经 worker 异步完成（抓取~1-2s），轮询刷新看健康/信号更新
   running.value = true
-  try { await api.runSpider(id.value); setTimeout(load, 800) }
-  finally { setTimeout(() => (running.value = false), 800) }
+  try {
+    await api.runSpider(id.value)
+    for (const d of [1200, 2600]) setTimeout(load, d)
+  } finally {
+    setTimeout(() => (running.value = false), 2800)
+  }
 }
 
 onMounted(load)

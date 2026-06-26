@@ -2,7 +2,7 @@
 
 > 给后续会话/另一台开发机：当前到哪了、什么已验证、下一步做什么。每个里程碑完成后更新本文件。
 
-最后更新：2026-06-26（M2 完成）
+最后更新：2026-06-26（M3 完成）
 
 ---
 
@@ -14,8 +14,8 @@
 | **M1** | 数据模型 + 核心 CRUD | ✅ 完成并验证 | 登录 + 外壳 + 列表/详情/版本 5 屏对齐高保真；后端接口 + 多域 seed |
 | **M2** | 规则编辑器 + 试运行 | ✅ 完成并验证 | 配置驱动 async 引擎抓首页→字段JSON+**真实四层信号**；三栏编辑器(点选高亮) |
 | M2.5 | 新建查重向导 | 未开始 | 7 步向导 + domain/url_pattern/字段重合度撞库拦截（从 M2 拆出）|
-| M3 | 调度 + 执行 + 落库 | ⏳ 下一步 | Beat(抖动)→worker执行→幂等入库；Run状态机+signals+双去重闸门 |
-| M4 | 实时 + 分诊看板 | 未开始 | worker→Redis→WS→深色分诊看板看真实健康三态 |
+| **M3** | 调度 + 执行 + 落库 | ✅ 完成并验证 | Beat(croniter+抖动)→worker真实执行→Sink幂等upsert→**真L4 dedup_new**+双去重闸门+对账 |
+| M4 | 实时 + 分诊看板 | ⏳ 下一步 | worker→Redis→WS→深色分诊看板看真实健康三态 |
 
 ---
 
@@ -100,8 +100,32 @@
 
 ---
 
-## 下一步：M3（调度 + 执行 + 落库）｜M2.5（新建查重向导）
+## M3 已完成内容（已 commit GitHub main，2026-06-26）
 
-- **M3**：Celery Beat(抖动防惊群) → worker 调 `engine.core` 真实执行 → 统一 Sink 幂等 upsert + **双去重闸门**(入队/已采，带 TTL) → Run 状态机 + 真实 L4 `dedup_new`/`watermark_hit`。对账器扫「已分发未完成」。
+**真实执行闭环 + 健康从真信号驱动**——把 M2 引擎接进 Celery，产出真实 L4 `dedup_new`，让「🔴改版 / 🟡真没数据 / 🟢健康 / ⚪未上报」由引擎实测而非 seed 假数据。
+
+**执行管线**：
+- `worker/tasks.py run_spider`：fetch(引擎)→parse→**统一 Sink 幂等 upsert**→真实四层信号(含 L4 `dedup_new`/`duplicate`/`watermark_hit`)→Run 状态机(running→success/failed)→`shared/health.py verdict` 更新 `spider.health_status`→推 triage。trigger `/run` 改派 `run_spider`(真实执行)。
+- `worker/sink/pg.py PgSink`：`crawled_records` 表 `(spider_id,dedup_key)` 唯一 = **已采去重闸门**；实插入数 = 真 `dedup_new`。`models.CrawledRecord` + `0002` 迁移。
+- **验证**：1 次跑 dedup_new=12/healthy/落库12；2 次跑 dedup_new=0/duplicate=12/data_dry（双去重闸门区分「出数据 vs 真没数据」）。
+
+**调度 + 对账**（`worker/celery_app.py beat_schedule`）：
+- `dispatch_due`(60s)：croniter 扫 Schedule cron 到点 → enqueue `run_spider`，`countdown` 抖动防惊群，`last_run_at` 作下发水位。
+- `reconcile`(120s)：扫 queued/running 超 10min 的 Run → 标 stopped（防 IC 那种静默丢数据，Run 记录作真相源）。
+- `api/schedule.py GET /overview`：调度时间线(croniter 未来 24h 触发点) + 对账(已分发/进行/完成/stuck/dlq) + 队列水位(redis llen)。
+
+**前端调度·对账屏**（`views/Schedule.vue`）：对账 KPI×5 + 24h gantt 时间线(域着色 fire 点) + 队列水位条 + 对账叙事条，每 15s 刷新。
+
+**seed 规则一致性**：每只爬虫 rules 跑起来就产出其「应有」健康 —— broken(错 selector)→🔴 / blocked(403)→🔴 / dry(预置 crawled)→🟡 / ok→🟢 / code(无 entries·暂停)→⚪。故 beat/手动执行印证而非破坏叙事；schedule `last_run_at=now` 防启动惊群。
+
+**验证**：`vue-tsc` + 生产 build 通过；真实跑 4 只健康与规则一致(rows0→🔴 / new12→🟢 / new0→🟡 / 403→🔴 / 未跑→⚪)；overview/dispatch_due/reconcile curl 全绿；chrome 截图调度屏。
+
+> 注：入队去重闸门(inque scope, DedupRegistry+TTL)在有父子任务派生(detail 子任务)时才真正吃重，M3 列表级以已采去重(crawled_records 唯一约束)为主，原语已就位。
+
+---
+
+## 下一步：M4（实时 + 分诊看板）｜M2.5（新建查重向导）
+
+- **M4**：worker→Redis pub-sub→WebSocket→深色巡检分诊看板（核心站盯梢 + 三态计数 + 全量热力图 + 分诊队列 + 🟡 snooze 闭环 + 四层信号条），看真实健康三态实时流。
 - **M2.5**（从 M2 拆出）：新建爬虫 7 步向导 + 查重（domain/url_pattern/字段重合度撞库拦截）。
-- 详见 `docs/SpiderX设计纲要-v1.md` §6/§7/§10。完成后更新本文件 + commit/push。
+- 详见 `docs/SpiderX设计纲要-v1.md` §5/§6/§11。完成后更新本文件 + commit/push。
