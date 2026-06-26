@@ -29,6 +29,9 @@ def _guard(url: str):
 # —— fixture 页（仿真站，离线确定性）——
 @router.get("/fixtures/{name}", response_class=HTMLResponse)
 async def get_fixture(name: str):
+    # 仿真反爬封禁站：返回 403，供「HTTP 层结构故障」叙事
+    if name == "blocked":
+        return HTMLResponse("<h1>403 Forbidden</h1>", status_code=403)
     html = fixtures.render(name)
     if html is None:
         raise HTTPException(404, "fixture not found")

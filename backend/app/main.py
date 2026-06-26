@@ -10,7 +10,7 @@ from sqlalchemy import text
 from shared.db import engine, async_session_maker
 from shared.redis_bus import get_async_redis
 from shared.enums import CH_TRIAGE
-from backend.app.api import spiders, projects, engine as engine_api
+from backend.app.api import spiders, projects, engine as engine_api, schedule
 from backend.app.seed import seed_demo
 
 app = FastAPI(title="SpiderX API", version="0.1.0")
@@ -23,6 +23,7 @@ app.add_middleware(
 app.include_router(projects.router)
 app.include_router(spiders.router)
 app.include_router(engine_api.router)
+app.include_router(schedule.router)
 
 
 @app.on_event("startup")

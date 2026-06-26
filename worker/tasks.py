@@ -6,8 +6,12 @@
 from __future__ import annotations
 import asyncio
 import os
+import random
 import uuid
 from datetime import datetime, timezone, timedelta
+
+from croniter import croniter
+from sqlalchemy import select
 
 from worker.celery_app import celery_app
 from worker.engine import core as engine
@@ -18,7 +22,10 @@ from shared.redis_bus import publish_sync
 from shared.health import verdict
 from shared.enums import (
     RunExecStatus, DataOutcome, RunTrigger, HealthStatus, CH_TRIAGE, SIGNAL_KEYS,
+    SpiderExecStatus,
 )
+
+STUCK_AFTER = timedelta(minutes=10)  # 对账阈值：running/queued 超此时长视为 stuck
 
 UTC = timezone.utc
 # worker 与 backend 是不同容器：相对 fixture 路径要走服务名 backend
@@ -138,3 +145,58 @@ def run_spider(self, spider_id: str, trigger: str = "manual") -> str:
         "ts": datetime.now(UTC).isoformat(),
     })
     return str(run_id)
+
+
+@celery_app.task(name="worker.dispatch_due")
+def dispatch_due() -> int:
+    """Beat：扫 Schedule 表，cron 到点的 enqueue run_spider（抖动防惊群）。
+    last_run_at 作下发水位，避免重复下发；停用爬虫跳过。"""
+    now = datetime.now(UTC)
+    dispatched = 0
+    with sync_session_maker() as s:
+        rows = s.execute(
+            select(Schedule, Spider).join(Spider, Schedule.spider_id == Spider.id)
+            .where(Schedule.enabled.is_(True), Spider.status != SpiderExecStatus.disabled.value)
+        ).all()
+        for sched, spider in rows:
+            base = sched.last_run_at or (now - timedelta(days=1))
+            try:
+                due = croniter(sched.cron, base).get_next(datetime) <= now
+            except Exception:
+                continue
+            if not due:
+                continue
+            jitter = random.randint(0, max(0, sched.jitter_sec or 0))
+            celery_app.send_task("worker.run_spider", args=[str(spider.id)],
+                                 kwargs={"trigger": RunTrigger.cron.value}, countdown=jitter)
+            sched.last_run_at = now
+            try:
+                sched.next_run_at = croniter(sched.cron, now).get_next(datetime)
+            except Exception:
+                pass
+            dispatched += 1
+        s.commit()
+    return dispatched
+
+
+@celery_app.task(name="worker.reconcile")
+def reconcile() -> int:
+    """Beat：对账 = 扫「已分发但超时未完成」(queued/running 超阈值) 的 Run → 标记 stopped。
+    防 IC 项目那种「确认进队列然后没了」静默丢数据 —— Run 记录作唯一真相源可见。"""
+    now = datetime.now(UTC)
+    threshold = now - STUCK_AFTER
+    stuck = 0
+    with sync_session_maker() as s:
+        runs = s.scalars(
+            select(Run).where(
+                Run.exec_status.in_([RunExecStatus.queued.value, RunExecStatus.running.value]),
+                Run.started_at < threshold,
+            )
+        ).all()
+        for r in runs:
+            r.exec_status = RunExecStatus.stopped.value
+            r.finished_at = now
+            r.stats = {**(r.stats or {}), "note": "对账：已分发但超时未完成 → 标记 stopped"}
+            stuck += 1
+        s.commit()
+    return stuck

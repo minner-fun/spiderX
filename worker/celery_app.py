@@ -14,4 +14,10 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,        # 有界预取
     timezone="Asia/Shanghai",
     # M0 用 Celery 默认队列，保证生产端/消费端一致；M3 再引入 default/high/retry/low 命名队列
+    beat_schedule={
+        # 调度下发：周期扫 Schedule 表，cron 到点的入队（带抖动防惊群）
+        "dispatch-due": {"task": "worker.dispatch_due", "schedule": 60.0},
+        # 对账：扫「已分发但超时未完成」的 Run，标记 stuck（防静默丢数据）
+        "reconcile-stuck": {"task": "worker.reconcile", "schedule": 120.0},
+    },
 )
