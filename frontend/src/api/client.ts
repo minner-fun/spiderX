@@ -81,6 +81,39 @@ export const api = {
 
   listRuns: (sid: string, limit = 10) =>
     http<Run[]>(`/api/spiders/${sid}/runs${qs({ limit })}`),
+
+  // —— M2 规则编辑器 / 引擎 ——
+  getRules: (sid: string) => http<RulesPayload>(`/api/spiders/${sid}/rules`),
+
+  saveRules: (sid: string, body: RulesPayload & { change_msg?: string }) =>
+    http<SpiderVersion>(`/api/spiders/${sid}/rules`, { method: 'POST', body: JSON.stringify(body) }),
+
+  defaultRules: () => http<Record<string, unknown>>('/api/engine/default-rules'),
+
+  dryRun: (url: string, rules: Record<string, unknown>) =>
+    http<DryRunResult>('/api/engine/dry-run', { method: 'POST', body: JSON.stringify({ url, rules }) }),
+
+  fetchPage: (url: string) =>
+    http<{ status: number; html: string }>('/api/engine/fetch-page', {
+      method: 'POST', body: JSON.stringify({ url }),
+    }),
+}
+
+export interface RulesPayload {
+  version?: number | null
+  rules: Record<string, unknown>
+  incremental: Record<string, unknown>
+  hooks: unknown[]
+}
+
+export interface DryRunResult {
+  http_status: number
+  list_rows: number | null
+  field_fill_rate: number | null
+  record_count: number
+  records: Record<string, unknown>[]
+  signals: import('../types').Signals
+  error: string | null
 }
 
 export interface DiffLine {

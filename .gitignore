@@ -22,3 +22,6 @@ celerybeat-schedule.*
 
 # Claude Code 本地会话目录
 .claude/
+
+# vue-tsc 构建缓存
+*.tsbuildinfo

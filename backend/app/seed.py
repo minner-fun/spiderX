@@ -76,12 +76,19 @@ SPIDERS = [
          sig=_sig(rows=12, fill=0.9, new=0, dup=12, wm=True), versions=1, owner="李航"),
 ]
 
+# 与本地 fixture 结构匹配（div.notice-item / a.notice-title / span.pub-date…），
+# 故 seeded 爬虫的规则在规则编辑器里对 fixture 试运行即可正常产出四层信号。
 RULES_BASE = {
-    "entries": [{"list_url_template": "https://example.gov.cn/list?page={page}&begin={watermark}"}],
+    "entries": [{"list_url_template": "/api/fixtures/bid-list?page={page}&begin={watermark}"}],
     "processors": [
-        {"url_reg": ".*/list.*", "type": "list", "row_selector": "div.item",
-         "fields": [{"name": "title", "selector": "a.title", "type": "text"},
-                    {"name": "pub_time", "selector": "span.date", "type": "date"}]},
+        {"url_reg": ".*list.*", "type": "list", "row_selector": "div.notice-item",
+         "fields": [
+             {"name": "title", "selector": "a.notice-title", "type": "text"},
+             {"name": "link", "selector": "a.notice-title", "attr": "href", "type": "text"},
+             {"name": "pub_time", "selector": "span.pub-date", "type": "date"},
+             {"name": "region", "selector": "span.region", "type": "area"},
+             {"name": "budget", "selector": "span.budget", "type": "money"},
+         ]},
     ],
     "sink": {"target": "pg", "table": "bid_notices", "dedup_key": "title+pub_time"},
 }
