@@ -9,10 +9,9 @@ from sqlalchemy import text
 
 from shared.db import engine, async_session_maker
 from shared.redis_bus import get_async_redis
-from shared.enums import CH_TRIAGE, Domain
-from shared.models import Project, User
-from sqlalchemy import select, func as sa_func
+from shared.enums import CH_TRIAGE
 from backend.app.api import spiders, projects
+from backend.app.seed import seed_demo
 
 app = FastAPI(title="SpiderX API", version="0.1.0")
 
@@ -27,15 +26,9 @@ app.include_router(spiders.router)
 
 @app.on_event("startup")
 async def seed_defaults():
-    """幂等 seed：保证有一个默认 project + user，便于 M0 终验。"""
+    """幂等 demo seed（空库时插入多域多健康态数据，撑 M1 屏）。"""
     async with async_session_maker() as s:
-        count = await s.scalar(select(sa_func.count()).select_from(Project))
-        if not count:
-            user = User(name="ops", email="ops@spiderx.local", role="owner")
-            s.add(user)
-            await s.flush()
-            s.add(Project(name="demo-招投标", env="dev", domain=Domain.bid.value))
-            await s.commit()
+        await seed_demo(s)
 
 
 @app.get("/health")
