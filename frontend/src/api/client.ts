@@ -97,6 +97,28 @@ export const api = {
     http<{ status: number; html: string }>('/api/engine/fetch-page', {
       method: 'POST', body: JSON.stringify({ url }),
     }),
+
+  scheduleOverview: () => http<ScheduleOverview>('/api/schedule/overview'),
+}
+
+export interface ScheduleRow {
+  spider_id: string
+  spider_name: string
+  domain: string
+  cron: string
+  queue: string
+  enabled: boolean
+  jitter_sec: number
+  last_run_at: string | null
+  next_run_at: string | null
+  fires: number[]
+}
+
+export interface ScheduleOverview {
+  schedules: ScheduleRow[]
+  reconcile: { dispatched: number; started: number; completed: number; stuck: number; failed: number; dlq: number }
+  queues: { name: string; depth: number }[]
+  now: string
 }
 
 export interface RulesPayload {

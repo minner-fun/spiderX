@@ -30,19 +30,27 @@ async def overview(session: AsyncSession = Depends(get_session)):
         .join(Project, Spider.project_id == Project.id)
         .order_by(Schedule.enabled.desc())
     )).all()
+    horizon = now + timedelta(hours=24)
     schedules = []
     for sched, name, domain in rows:
+        next_run = None
+        fires: list[float] = []  # 未来 24h 内的触发点（距 now 的小时偏移 0..24）
         try:
-            nxt = croniter(sched.cron, now).get_next(datetime)
+            it = croniter(sched.cron, now)
+            nxt = it.get_next(datetime)
             next_run = nxt.isoformat()
+            t = nxt
+            while t <= horizon and len(fires) < 60:
+                fires.append(round((t - now).total_seconds() / 3600, 3))
+                t = it.get_next(datetime)
         except Exception:
-            next_run = None
+            pass
         schedules.append({
             "spider_id": str(sched.spider_id), "spider_name": name, "domain": domain,
             "cron": sched.cron, "queue": sched.queue, "enabled": sched.enabled,
             "jitter_sec": sched.jitter_sec,
             "last_run_at": sched.last_run_at.isoformat() if sched.last_run_at else None,
-            "next_run_at": next_run,
+            "next_run_at": next_run, "fires": fires,
         })
 
     # —— 对账（近 24h）——

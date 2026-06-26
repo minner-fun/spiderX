@@ -30,7 +30,7 @@ export const NAV: NavGroup[] = [
     title: '管理',
     items: [
       { key: 'spiders', label: '爬虫', to: '/spiders', icon: '◈', owns: ['/spiders'] },
-      { key: 'schedule', label: '调度', to: '/schedule', icon: '▤', milestone: 'M3' },
+      { key: 'schedule', label: '调度', to: '/schedule', icon: '▤' },
       { key: 'rules', label: '数据 · 规则', to: '/data', icon: '✦', milestone: 'M2' },
       { key: 'authors', label: '作者 · 权限', to: '/authors', icon: '◍', milestone: 'M4' },
     ],
