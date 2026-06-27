@@ -21,9 +21,9 @@ export const NAV: NavGroup[] = [
   {
     title: '监控',
     items: [
-      { key: 'triage', label: '巡检分诊', to: '/triage', icon: '◎', badge: { count: 23, state: 'red' } },
-      { key: 'realtime', label: '实时 · 节点', to: '/realtime', icon: '◷', milestone: 'M4' },
-      { key: 'alerts', label: '告警 · 反爬', to: '/alerts', icon: '⚠', badge: { count: 7, state: 'yellow' }, milestone: 'M4' },
+      { key: 'triage', label: '巡检分诊', to: '/triage', icon: '◎' },
+      { key: 'realtime', label: '实时 · 节点', to: '/realtime', icon: '◷', milestone: 'M5' },
+      { key: 'alerts', label: '告警 · 反爬', to: '/alerts', icon: '⚠', milestone: 'M5' },
     ],
   },
   {

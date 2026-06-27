@@ -11,7 +11,7 @@ const router = createRouter({
       path: '/',
       component: AppShell,
       children: [
-        { path: '', redirect: '/spiders' },
+        { path: '', redirect: '/triage' },
         { path: 'triage', component: () => import('../views/Triage.vue'), meta: { title: '巡检分诊' } },
         { path: 'spiders', component: () => import('../views/Spiders.vue'), meta: { title: '爬虫' } },
         { path: 'spiders/:id', component: () => import('../views/SpiderDetail.vue'), meta: { title: '爬虫详情' } },

@@ -99,6 +99,31 @@ export const api = {
     }),
 
   scheduleOverview: () => http<ScheduleOverview>('/api/schedule/overview'),
+
+  // —— M4 巡检分诊 ——
+  triageSummary: () => http<TriageSummary>('/api/triage/summary'),
+  triageHeatmap: () => http<{ cells: HeatCell[]; total: number }>('/api/triage/heatmap'),
+  triageCoreSites: (limit = 12) => http<{ sites: TriageItem[] }>(`/api/triage/core-sites${qs({ limit })}`),
+  triageQueue: (filter: 'pending' | 'snoozed' | 'escalated' = 'pending') =>
+    http<{ filter: string; items: TriageItem[] }>(`/api/triage/queue${qs({ filter })}`),
+  triageSnooze: (spider_id: string, days = 3, reason = '人工确认真没数据') =>
+    http<{ ok: boolean }>('/api/triage/snooze', { method: 'POST', body: JSON.stringify({ spider_id, days, reason }) }),
+  triageEscalate: (spider_id: string) =>
+    http<{ ok: boolean }>('/api/triage/escalate', { method: 'POST', body: JSON.stringify({ spider_id }) }),
+}
+
+export interface TriageSummary {
+  counts: { structural_fail: number; data_dry: number; healthy: number; unknown: number }
+  total: number
+  last_inspection: string | null
+}
+export interface HeatCell { id: string; name: string; health: string; value: number; core: boolean }
+export interface TriageItem {
+  id: string; name: string; health: string; priority: string
+  contribution_pct: number; is_core: boolean
+  today: number | null; baseline: number; spark: number[]
+  domain?: string; signal_text?: string
+  snooze_until?: string | null; snooze_status?: string | null
 }
 
 export interface ScheduleRow {
