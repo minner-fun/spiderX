@@ -60,7 +60,9 @@ SpiderX = 这三者的交集。
 
 **M3 已完成并验证**：真实执行闭环 —— `run_spider` 引擎抓取→**统一 Sink 幂等 upsert(`crawled_records`)→真实 L4 `dedup_new`**→`shared/health.py` 更新 health_status→推 triage；**双去重闸门**区分「出数据🟢 vs 真没数据🟡」。Celery Beat(`dispatch_due` croniter+抖动 / `reconcile` 扫已分发未完成) + 调度·对账屏(gantt+队列水位+对账)。seed 改规则一致(broken🔴/blocked🔴/dry🟡/ok🟢/code⚪)，健康由引擎实测。
 
-**里程碑**：M0✅ → M1✅ → M2✅ → M3 调度+执行+落库✅ → M4 实时+分诊看板。**下一步：M4**（M2.5 新建查重向导从 M2 拆出，可穿插）。
+**M4 已完成并验证**：巡检分诊看板(默认首页) —— 三态计数 + 核心站盯梢 + 全量热力图 + 四层信号条 + 分诊队列(🟡 snooze 闭环: 确认真没数据/升级故障/出数据自动解除) + **WS 实时事件流**。`api/triage.py` + `SnoozeState`(0003) + 72 只舰队 seed(共 81 站)。实时链路 worker→Redis→WS→前端端到端验证。
+
+**里程碑**：M0✅ → M1✅ → M2✅ → M3✅ → M4 实时+分诊看板✅。**本期主线 M0→M4 全部达成。** 下一步：M5(实时·节点/告警·反爬) 或 M2.5(新建查重向导)。
 
 ---
 

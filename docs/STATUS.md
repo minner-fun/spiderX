@@ -2,7 +2,7 @@
 
 > 给后续会话/另一台开发机：当前到哪了、什么已验证、下一步做什么。每个里程碑完成后更新本文件。
 
-最后更新：2026-06-26（M3 完成）
+最后更新：2026-06-27（M4 完成 · 本期主线 M0→M4 全部达成）
 
 ---
 
@@ -15,7 +15,8 @@
 | **M2** | 规则编辑器 + 试运行 | ✅ 完成并验证 | 配置驱动 async 引擎抓首页→字段JSON+**真实四层信号**；三栏编辑器(点选高亮) |
 | M2.5 | 新建查重向导 | 未开始 | 7 步向导 + domain/url_pattern/字段重合度撞库拦截（从 M2 拆出）|
 | **M3** | 调度 + 执行 + 落库 | ✅ 完成并验证 | Beat(croniter+抖动)→worker真实执行→Sink幂等upsert→**真L4 dedup_new**+双去重闸门+对账 |
-| M4 | 实时 + 分诊看板 | ⏳ 下一步 | worker→Redis→WS→深色分诊看板看真实健康三态 |
+| **M4** | 实时 + 分诊看板 | ✅ 完成并验证 | worker→Redis→WS→深色分诊看板(三态/核心站/热力图/分诊队列/🟡闭环)看真实健康 |
+| M5 | 实时·节点 / 告警·反爬 | 未开始 | 吞吐视图 + 节点控制台 + 告警规则 + 反爬面板（IA 已规划）|
 
 ---
 
@@ -124,8 +125,28 @@
 
 ---
 
-## 下一步：M4（实时 + 分诊看板）｜M2.5（新建查重向导）
+## M4 已完成内容（已 commit GitHub main，2026-06-27）
 
-- **M4**：worker→Redis pub-sub→WebSocket→深色巡检分诊看板（核心站盯梢 + 三态计数 + 全量热力图 + 分诊队列 + 🟡 snooze 闭环 + 四层信号条），看真实健康三态实时流。
+**门面屏 + 实时闭环**——默认首页巡检分诊看板，看真实健康三态实时流。
+
+**后端**（`backend/app/api/triage.py`）：
+- `summary` 三态计数 / `heatmap` 全量站点格(红前黄中绿后,按价值次排) / `core-sites` 核心站盯梢(today/baseline/spark) / `queue` 分诊队列(价值×严重度, pending/snoozed/escalated) / `snooze`(确认真没数据→N天) / `escalate`(升级提P0)。
+- `models.SnoozeState`(🟡闭环: snoozed/escalated/released) + `0003` 迁移；`run_spider` 出数据(转🟢)自动解除 snooze。
+- seed 加 **72 只轻量舰队爬虫**(健康分布+1版本+6run sparkline, 无调度→健康为最近已知) 撑聚合视图，共 **81 站**。
+
+**前端**（`views/Triage.vue` 替换 M0 脚手架，默认首页 `/` → `/triage`）：
+- 三态计数 KPI + 核心站盯梢(sparkline 卡) + 全量热力图(可点进详情) + 四层信号模型条 + 分诊队列(🟡 条目带「✓确认真没数据 / ↑升级故障」按钮 + snooze 闭环说明) + **WS 实时事件流**(LIVE 绿脉冲)。
+- `components/Sparkline.vue`(ECharts 迷你线)；`client` 6 个 triage 方法。
+
+**实时链路**：worker `run_spider` → `publish_sync(CH_TRIAGE, run_done)` → Redis pub-sub → WS `/ws/triage` → 前端事件流 + 看板刷新。**验证**：Triage 页触发运行 → 事件流实时收到「中国政府采购网-中央 · 结构故障 · 新增 0」。
+
+**验证**：`vue-tsc` + 生产 build 通过；summary🔴2🟡4🟢74⚪1；snooze 把 data_dry 移出 pending、escalate→escalated；WS 端到端实时流；chrome 全屏截图核对看板。
+
+---
+
+## 下一步：M5（实时·节点 / 告警·反爬）｜M2.5（新建查重向导）
+
+- **M5**：实时吞吐视图(KPI+集群负载热力图+吞吐曲线+事件流) + 节点控制台 + 告警规则(分层信号条件) + 反爬面板(HTTP 状态码柱+验证码/封禁信号)。
 - **M2.5**（从 M2 拆出）：新建爬虫 7 步向导 + 查重（domain/url_pattern/字段重合度撞库拦截）。
-- 详见 `docs/SpiderX设计纲要-v1.md` §5/§6/§11。完成后更新本文件 + commit/push。
+- 二期：RBAC 细化、结果浏览/数据导出、节点/代理池/并发配额屏（纲要 §12）。
+- 详见 `docs/SpiderX设计纲要-v1.md` §6/§9/§12。完成后更新本文件 + commit/push。
