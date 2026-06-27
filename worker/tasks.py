@@ -17,7 +17,7 @@ from worker.celery_app import celery_app
 from worker.engine import core as engine
 from worker.sink import pg as pg_sink
 from shared.db import sync_session_maker
-from shared.models import Run, Spider, SpiderVersion, Schedule
+from shared.models import Run, Spider, SpiderVersion, Schedule, SnoozeState
 from shared.redis_bus import publish_sync
 from shared.health import verdict
 from shared.enums import (
@@ -126,6 +126,11 @@ def run_spider(self, spider_id: str, trigger: str = "manual") -> str:
         run.stats = {"note": note}
         new_health = verdict(signals)
         spider.health_status = new_health
+        # 🟡 闭环：出数据(转🟢)则自动解除 snooze
+        if new_health == HealthStatus.healthy.value:
+            sn = s.scalar(select(SnoozeState).where(SnoozeState.spider_id == sid))
+            if sn and sn.status == "snoozed":
+                sn.status = "released"
         if trigger == RunTrigger.cron.value:
             sched = s.scalar(
                 Schedule.__table__.select().where(Schedule.spider_id == sid).limit(1)

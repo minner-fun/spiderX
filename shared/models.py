@@ -123,3 +123,18 @@ class DedupRegistry(Base):
     key: Mapped[str] = mapped_column(String(256), index=True)
     expire_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SnoozeState(Base):
+    """🟡 闭环（M4）：数据干涸经人工确认「真没数据」→ snooze N 天；
+    出数据(run dedup_new>0)或到期自动解除；也可升级为故障。每 spider 至多一条活动状态。"""
+    __tablename__ = "snooze_states"
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    spider_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("spiders.id", ondelete="CASCADE"), index=True, unique=True)
+    status: Mapped[str] = mapped_column(String(12), default="snoozed")  # snoozed / escalated / released
+    reason: Mapped[str] = mapped_column(String(256), default="")
+    baseline: Mapped[int] = mapped_column(Integer, default=0)
+    snooze_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    operator: Mapped[str] = mapped_column(String(64), default="ops")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

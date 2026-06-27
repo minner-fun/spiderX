@@ -201,4 +201,82 @@ async def seed_demo(s: AsyncSession) -> None:
                 stats={"note": sc.get("note", "")}, signals=signals, created_at=ts,
             ))
 
+    # —— 舰队填充（M4）：~72 只轻量爬虫撑分诊看板聚合视图（三态计数/热力图）——
+    # 无调度(beat 跳过) → 健康态为「最近已知」，不被执行刷新；各带 1 版本 + 6 次运行作 sparkline。
+    await _seed_fleet(s, projects[Domain.bid], list(users.values()), now)
+
     await s.commit()
+
+
+_PROVINCES = [
+    "北京", "上海", "天津", "重庆", "河北", "山西", "辽宁", "吉林", "黑龙江", "江苏",
+    "浙江", "安徽", "福建", "江西", "山东", "河南", "湖北", "湖南", "广西", "海南",
+    "贵州", "云南", "陕西", "甘肃", "青海", "新疆", "成都", "武汉", "西安", "南京",
+    "苏州", "厦门", "宁波", "青岛", "大连", "无锡",
+]
+_TYPES = ["公共资源交易中心", "政府采购网", "招标投标网", "公共资源交易网", "财政采购中心"]
+
+# 健康分布（撑「大盘多为🟢，少数🔴🟡，个别⚪」）：索引取模
+_FLEET_HEALTH = (
+    [HealthStatus.healthy] * 70 + [HealthStatus.data_dry] * 16
+    + [HealthStatus.structural_fail] * 9 + [HealthStatus.unknown] * 5
+)
+
+
+def _fleet_runs(health: HealthStatus, now: datetime, base: int) -> list[dict]:
+    out = []
+    for k in range(6):
+        if health == HealthStatus.unknown:
+            sig = {kk: None for kk in SIGNAL_KEYS}
+        elif health == HealthStatus.structural_fail:
+            sig = _sig(rows=0, fill=None, new=None) if k == 0 else _sig(rows=base, fill=0.95, new=base // 2, dup=base // 2, wm=True)
+        elif health == HealthStatus.data_dry:
+            sig = _sig(rows=base, fill=0.96, new=0, dup=base, wm=True) if k < 2 else _sig(rows=base, fill=0.96, new=base // 3, dup=base, wm=True)
+        else:  # healthy
+            sig = _sig(rows=base, fill=0.97, new=max(1, base // 2 - k), dup=base // 2, wm=True)
+        out.append(sig)
+    return out
+
+
+async def _seed_fleet(s: AsyncSession, project: Project, users: list[User], now: datetime) -> None:
+    n = 72
+    for i in range(n):
+        health = _FLEET_HEALTH[i % len(_FLEET_HEALTH)]
+        prov = _PROVINCES[i % len(_PROVINCES)]
+        typ = _TYPES[i % len(_TYPES)]
+        name = f"{prov}{typ}"
+        owner = users[i % len(users)]
+        # 业务价值：少数核心站（高贡献），多数长尾
+        is_core = (i % 17 == 0)
+        contrib = round(3.0 + (i % 5), 1) if is_core else round(0.1 + (i % 9) * 0.05, 2)
+        prio = Priority.p0 if is_core else (Priority.p1 if i % 6 == 0 else Priority.p2)
+        base = 20 + (i % 40)
+
+        sp = Spider(
+            project_id=project.id, name=name, owner_id=owner.id,
+            status=SpiderExecStatus.running.value, health_status=health.value,
+            priority=prio.value, contribution_pct=contrib, is_core=is_core,
+            tags=[Domain.bid.name, "核心站" if is_core else "长尾"],
+        )
+        s.add(sp)
+        await s.flush()
+        ver = SpiderVersion(
+            spider_id=sp.id, version=1, rules=build_rules("ok", Domain.bid, 1),
+            incremental={"field": "pub_time", "watermark_key": f"{name}:wm", "window": "3d"},
+            hooks=[], is_live=True, author_id=owner.id, change_msg="v1 初始化规则",
+            created_at=now - timedelta(days=3),
+        )
+        s.add(ver)
+        await s.flush()
+        sp.current_version_id = ver.id
+        for k, sig in enumerate(_fleet_runs(health, now, base)):
+            ts = now - timedelta(hours=k * 5 + 1)
+            new = sig.get("dedup_new")
+            outcome = (DataOutcome.new if (new or 0) > 0
+                       else DataOutcome.dry if sig.get("list_rows") is not None else DataOutcome.na)
+            s.add(Run(
+                spider_id=sp.id, version_id=ver.id,
+                exec_status=RunExecStatus.success.value, data_outcome=outcome.value,
+                trigger=RunTrigger.cron.value, started_at=ts, finished_at=ts + timedelta(minutes=1),
+                stats={}, signals=sig, created_at=ts,
+            ))
