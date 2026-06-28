@@ -6,6 +6,35 @@
 
 ---
 
+## 换机接续：另一台机器从这里继续
+
+> 本期主线 M0→M4 已全部完成并 push 到 `origin/main`（迁移到 0003）。换机后按下面起栈即可继续。
+
+```bash
+git clone <repo> && cd spiderX
+cp .env.example .env                  # 按需改密钥；容器内用服务名 postgres/redis
+docker compose up -d --build          # pg + redis + backend + worker（首次 build 约 1~2 分钟）
+curl localhost:8000/health            # {"status":"ok","db":true,"redis":true}
+cd frontend && npm install
+VITE_API_TARGET=http://localhost:8000 npm run dev   # 打开 localhost:5173
+```
+
+- **首启自动**：backend 容器启动跑 `alembic upgrade head`（建表到 0003）+ 幂等 `seed_demo`（空库才插：2 项目 + 81 站 demo）。worker 含 Beat，每分钟按 cron 自动跑到点的爬虫。
+- **登录**：M1 假登录，账号/密码随便填 → 默认进巡检分诊看板。
+- **端口冲突（5432）**：若本机已占 5432，建一个 `docker-compose.override.yml`（已 gitignore，不提交）把容器 PG 宿主映射改到别的端口，用 `!override` 替换 ports（compose 对 ports 是追加合并，必须用 `!override`）：
+  ```yaml
+  services:
+    postgres:
+      ports: !override ["5433:5432"]
+  ```
+  容器之间仍走服务名 `postgres:5432`，不受宿主映射影响。本机(minner dev)用的就是 5433，见文末「测试/部署机」。
+- **停服**：`docker compose down`（保留数据卷 `spiderx_pgdata`）｜`docker compose down -v`（连数据一起清，下次起栈重新 seed）。前端 dev 直接 Ctrl-C。
+- **重型池**（Scrapy/Playwright）别在小内存机跑；M0~M4 全是轻量 async（httpx+parsel），无所谓。
+
+**接续开发的下一步**：见文末「下一步」——M5（实时·节点 / 告警·反爬）或 M2.5（新建查重向导）。读完本文件 + `CLAUDE.md` + `docs/SpiderX设计纲要-v1.md` 即可无缝接续。
+
+---
+
 ## 里程碑总览
 
 | # | 里程碑 | 状态 | 验收标准 |
